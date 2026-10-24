@@ -19,6 +19,35 @@ const eslintConfig = [
     },
   },
   {
+    // 02 §3.1: domain depends on no other layer and has no React or IO code.
+    files: ['src/domain/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            mocksBoundary,
+            {
+              group: [
+                '@/app',
+                '@/app/*',
+                '@/features',
+                '@/features/*',
+                '@/services',
+                '@/services/*',
+              ],
+              message: 'Domain depends on no other layer.',
+            },
+            {
+              group: ['react', 'react-dom', 'next', 'next/*'],
+              message: 'Domain has no React code.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // The mock bootstrap is the only app code allowed to load the mock backend.
     files: ['src/mocks/**', 'src/app/mock-provider.tsx'],
     rules: { 'no-restricted-imports': 'off' },
