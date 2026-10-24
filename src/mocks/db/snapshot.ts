@@ -1,10 +1,10 @@
 import { TABLE_NAMES, type TableRows, type Tables } from './schema'
 import type { SnapshotStorage } from './storage'
 
-// 02 §5.5 "Persistence and multiple tabs". Bump both when a row type changes, so tabs
-// holding an older shape reseed instead of reading it.
+// 02 §5.5 "Persistence and multiple tabs". Bump the version when a table or row type
+// changes, so tabs holding an older shape reseed instead of reading it.
 export const SNAPSHOT_KEY = 'shipment-db:v1'
-const SCHEMA_VERSION = 1
+const SCHEMA_VERSION = 2
 
 export interface Snapshot {
   version: number

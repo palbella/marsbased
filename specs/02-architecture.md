@@ -408,6 +408,7 @@ tables/*.ts (seeds) ──(createDatabase)──► db (in-memory tables) ◄─
 | `activity` | id, shipmentId, exceptionId?, userId?, type, payload, at | Actions and automatic resolutions |
 | `alerts` | id, shipmentId, accountId, type, title, message, etaImpact?, requiresAction, createdAt, readAt? | BR-AL-* |
 | `documents` | id, shipmentId, type, status, fileName?, size?, uploadedBy?, uploadedAt? | |
+| `shipmentEvaluations` | id (= shipmentId), onTime, eta, status, evaluatedAt | Last engine evaluation, used to detect transitions for alerts (BR-AL-01) |
 | `simulator` | id, clockOffsetHours, scenariosRun | Single row; non-production |
 
 #### Sketch

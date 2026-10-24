@@ -23,8 +23,10 @@ raw event ─► normalise (§2) ─► milestones (§3) ─► status (§4) · 
 ## 2. Normalisation of operator events
 
 Each operator reports in its own format (see [07-seed-data.md](07-seed-data.md) §3). Every
-format has a parser `(payload) => { code, label, occurredAt, isEstimate, location? }` and
-then goes through the same mapping.
+format has a parser `(rawEvent) => { code, label, occurredAt, isEstimate, location?, eta? }`
+that receives the whole raw event (payload + `receivedAt`), then goes through the same
+mapping. For `eta_update` events the payload date is the **new ETA**, so `occurredAt` is
+the event's `receivedAt`.
 
 - **BR-NM-01 Mapping.** The pair `(operatorId, code)` is looked up in `statusMappings`. A
   mapping targets one of:
@@ -45,6 +47,8 @@ then goes through the same mapping.
   in order of arrival; a late event can fill an earlier milestone.
 - **BR-NM-05 Traceability.** Every milestone value keeps the `rawEventId` it came from, so
   ops can see the original operator message next to it (US-O-04, P1).
+- **BR-NM-06 Out-of-plan events.** A mapped event whose milestone is not in its leg's plan
+  (BR-MS-01) is kept as a raw event but does not change the timeline.
 
 ## 3. Milestone plan
 
@@ -89,7 +93,8 @@ then goes through the same mapping.
   customs block. It is open until a later `customs_cleared` arrives.
 - **BR-MS-06 Current leg.** The current leg is the leg of the latest done milestone. If that
   milestone is the last one of its leg, the current leg is the next one. Before any event,
-  it is the first leg.
+  it is the first leg. The customs block counts as the tail of the sea leg (its events come
+  from the sea operator), so the sea leg stays current until `customs_cleared`.
 
 ## 4. Shipment status
 
@@ -118,10 +123,12 @@ first rule that applies wins:
 - **BR-ETA-03 Operator estimate, earlier leg.** If an earlier leg's operator sent an
   `eta_update` for its own arrival, the difference with that leg's planned arrival is
   carried forward: `ETA = plannedEta + (newLegArrival − plannedLegArrival)`. `estimated`,
-  source `system`, and the evidence names the operator update it comes from.
+  source `system`, and the evidence names the operator update it comes from. It applies
+  only until that leg's arrival milestone is done; after that, BR-ETA-04 takes over.
 - **BR-ETA-04 System estimate.** `delay = max(0, actual − planned)` of the latest done
   milestone; `ETA = plannedEta + delay`. `estimated`, source `system`. Before any event,
-  `ETA = plannedEta`, source `booking`.
+  `ETA = plannedEta`, source `booking`, observed at the booking time (first-leg departure
+  − 48 h, see 07 §4 "Documents").
 - **BR-ETA-05 Unknown.** If the shipment is stale beyond twice its interval (BR-SL-02), the
   ETA is still returned with its provenance, but it is flagged `outdated: true` and the
   on-time indicator becomes `unknown` (BR-OT-01). No rule ever produces a date without a
@@ -233,14 +240,18 @@ All actions go through `POST /api/exceptions/:id/actions`, are ops-only and are 
   | urgency | 1.5 if ETA is less than 24 h away or past · 1.2 under 72 h · 1.0 otherwise |
   | age | 1.2 if open more than 24 h without any action · 1.0 otherwise |
 
-- **BR-PR-02 Order.** Score descending, then `detectedAt` ascending.
+- **BR-PR-02 Order.** Score descending, then `detectedAt` ascending (the older exception
+  first on a tie).
 - **BR-PR-03 Explanation.** The AI rationale lists each factor with its value as evidence
   ("Key account", "International", "ETA in 18 h", "Open 30 h without action"), so the
   ranking is never a black box.
 
 ## 12. Customer alerts
 
-- **BR-AL-01 Triggers.** Alerts are created for the shipment's account when:
+- **BR-AL-01 Triggers.** Transitions are detected against the shipment's last evaluation
+  (on-time indicator, ETA, status), stored in `shipmentEvaluations` after every
+  recomputation; a shipment's first evaluation compares against `on_time` and
+  `plannedEta`. Alerts are created for the shipment's account when:
 
   | Type | When |
   |------|------|
@@ -257,7 +268,9 @@ All actions go through `POST /api/exceptions/:id/actions`, are ops-only and are 
 - **BR-AL-03 Content.** Each alert has a title, what happened, the ETA impact (old → new,
   with provenance) and `requiresAction` (true only for ops messages flagged as such).
 - **BR-AL-04 Deduplication.** One alert per `(shipmentId, type, newValue)`. Repeated events
-  with the same outcome create no new alerts.
+  with the same outcome create no new alerts. `newValue` is the new ETA for ETA-based
+  alerts (`at_risk`, `late`, `eta_changed`), and the triggering raw event id for `on_hold`
+  and `customs_issue`.
 - **BR-AL-05 One alert per change.** If several triggers fire in the same recomputation,
   a single alert is created with the most important type
   (`on_hold` > `customs_issue` > `late` > `at_risk` > `eta_changed`), including the ETA
@@ -310,7 +323,9 @@ shipment (P1) and set `model: 'mock-v1'`.
   confidence. If the best score is below 0.4, show "No confident suggestion" and let the
   agent choose.
 - **BR-AI-05 Predicted ETA (AI-5).** For each remaining leg,
-  `predicted delay += remainingPlannedHours × (delayFactor − 1)`, where `delayFactor` is the
+  `predicted delay += remainingPlannedHours × (delayFactor − 1)`, where
+  `remainingPlannedHours` is `plannedArrival − max(now, plannedDeparture)` for the current
+  leg and the full planned duration for later legs, and `delayFactor` is the
   operator's historical ratio of actual to planned duration, per vessel for sea legs when
   known (seed: [07-seed-data.md](07-seed-data.md) §3). `predictedEta = ETA + predicted delay`. Confidence `0.85 − 0.1 × remaining sea legs`,
   minus 0.1 if stale, minimum 0.4. If `|predictedEta − ETA| ≤ 2 h`, the UI shows "AI

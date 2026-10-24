@@ -9,6 +9,7 @@ import { legsSeed } from './tables/legs'
 import { operatorsSeed } from './tables/operators'
 import { rawEventsSeed } from './tables/raw-events'
 import { sessionsSeed } from './tables/sessions'
+import { shipmentEvaluationsSeed } from './tables/shipment-evaluations'
 import { shipmentsSeed } from './tables/shipments'
 import { simulatorSeed } from './tables/simulator'
 import { sitesSeed } from './tables/sites'
@@ -33,6 +34,7 @@ export function seedRows(clock: Clock): TableRows {
     activity: activitySeed,
     alerts: alertsSeed,
     documents: documentsSeed(clock),
+    shipmentEvaluations: shipmentEvaluationsSeed,
     simulator: simulatorSeed,
   })
 }

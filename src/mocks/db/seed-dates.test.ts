@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createClock } from '@/mocks/clock'
-import { createDatabase } from './database'
 import { pastActionsSeed } from './past-actions'
-import { TABLE_NAMES } from './schema'
-import { createMemoryStorage } from './storage'
+import { seedRows } from './seed'
 
 const REAL_TIME = Date.parse('2026-11-10T08:00:00.000Z')
 const SHIFT_HOURS = 10
@@ -15,14 +13,14 @@ const EUR_CSV = /^([^;]+);(\d{4}-\d{2}-\d{2});(\d{2}:\d{2});(.+)$/
 // lmx-text "10/11/2026 09:30".
 const LMX_DATE = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/
 
+// The seeded facts only: what the engine derives from them (SD-02) is checked in
+// seed-shipments.test.ts and seed-views.test.ts.
 function seededFacts(offsetHours: number) {
   const clock = createClock(
     () => offsetHours,
     () => REAL_TIME,
   )
-  const db = createDatabase(clock, createMemoryStorage())
-  const tables = Object.fromEntries(TABLE_NAMES.map((name) => [name, db[name].all()]))
-  return { tables, pastActions: pastActionsSeed(clock) }
+  return { tables: seedRows(clock), pastActions: pastActionsSeed(clock) }
 }
 
 let datesSeen = 0

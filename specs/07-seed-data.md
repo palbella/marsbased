@@ -225,7 +225,7 @@ name.
 | Ana Ruiz (Talleres) | 2 shipments | 1 `late` with alert |
 | Camille Durand (Durand) | 3 shipments | 1 `late` (+30 h), EU route without customs |
 | Diego Hernández (Corvane MX) | 10 shipments | multimodal with customs: hold, customs incident, delay, AI-predicted risk; several unread alerts |
-| Marc Puig (ops, ZGZ + VLC) | Attention queue | hold, delays, customs incident (waiting on operator), missing document |
+| Marc Puig (ops, ZGZ + VLC) | Attention queue | 1 SH-10441 hold (90) · 2 SH-10444 customs incident, waiting on operator (60) · 3 SH-10436 delay (60) · 4 SH-10411 delay (54) · 5 SH-10438 missing document (48) · 6 SH-10409 delay (24) |
 | Núria Vidal (ops, BIO + BCN) | Attention queue | stale shipment; `RET-PLAT` unmapped (seen 2 times) in Status mappings |
 | Elena Martín (ops manager) | Attention queue | everything above |
 

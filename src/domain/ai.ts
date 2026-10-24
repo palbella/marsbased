@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { notifyCustomerPayloadSchema } from './exception-action'
 import { MAX_PRIORITY_SCORE } from './exception'
 import { mappingTargetSchema } from './mapping'
-import { isoDateTimeSchema } from './primitives'
+import { idSchema, isoDateTimeSchema } from './primitives'
 import { sourced } from './provenance'
 
 export const aiInsightKindSchema = z.enum([
@@ -14,10 +14,25 @@ export const aiInsightKindSchema = z.enum([
 ])
 export type AiInsightKind = z.infer<typeof aiInsightKindSchema>
 
+// 02 §6.3: what an evidence footnote links to.
+export const evidenceRefSchema = z.object({
+  kind: z.enum(['milestone', 'raw_event', 'document']),
+  id: idSchema,
+})
+export type EvidenceRef = z.infer<typeof evidenceRefSchema>
+
+// 02 §6.3: one fact behind an AI output. `ref` is absent for facts without a visual anchor
+// (e.g. account tier).
+export const evidenceSchema = z.object({
+  text: z.string().min(1),
+  ref: evidenceRefSchema.optional(),
+})
+export type Evidence = z.infer<typeof evidenceSchema>
+
 // 02 §6.3, P3: every AI output shows its confidence and the evidence behind it.
 const aiInsightMetaSchema = z.object({
   confidence: z.number().min(0).max(1),
-  evidence: z.array(z.string().min(1)),
+  evidence: z.array(evidenceSchema),
   generatedAt: isoDateTimeSchema,
   model: z.string().min(1),
 })

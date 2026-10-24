@@ -1,8 +1,11 @@
 import { createClock, type Clock } from '@/mocks/clock'
+import { replaySeed } from '@/mocks/engine/seed-replay'
+import { pastActionsSeed } from './past-actions'
 import { createTables, loadTables, TABLE_NAMES, type Tables } from './schema'
 import { seedRows } from './seed'
 import { readSnapshot, writeSnapshot } from './snapshot'
 import type { SnapshotStorage } from './storage'
+import type { SessionRow } from './tables/sessions'
 import { SIMULATOR_ROW_ID, simulatorSeed } from './tables/simulator'
 
 export type Database = Tables & {
@@ -28,8 +31,12 @@ export function createDatabase(clock: Clock, storage: SnapshotStorage): Database
     for (const name of TABLE_NAMES) tables[name].markClean()
   }
 
-  loadTables(tables, snapshot?.tables ?? seedRows(clock))
-  if (!snapshot) persist()
+  if (snapshot) {
+    loadTables(tables, snapshot.tables)
+  } else {
+    seed(tables, clock)
+    persist()
+  }
 
   return {
     ...tables,
@@ -48,10 +55,18 @@ export function createDatabase(clock: Clock, storage: SnapshotStorage): Database
       // The clock may read its offset from this row, so the reseed starts from a fresh "now"
       // (07 §6 "Reset").
       tables.simulator.load(structuredClone(simulatorSeed))
-      loadTables(tables, { ...seedRows(clock), sessions })
+      seed(tables, clock, sessions)
       persist()
     },
   }
+}
+
+// SD-02, SD-03: the seeded facts, then the engine replays them up to now, so exceptions,
+// alerts and activity look as if the system had been running.
+function seed(tables: Tables, clock: Clock, sessions?: SessionRow[]): void {
+  const rows = seedRows(clock)
+  loadTables(tables, sessions ? { ...rows, sessions } : rows)
+  replaySeed(tables, pastActionsSeed(clock), clock.now())
 }
 
 export function readClockOffsetHours(tables: Tables): number {

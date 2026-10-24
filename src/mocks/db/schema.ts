@@ -8,6 +8,7 @@ import type { LegRow } from './tables/legs'
 import type { OperatorRow } from './tables/operators'
 import type { RawEventRow } from './tables/raw-events'
 import type { SessionRow } from './tables/sessions'
+import type { ShipmentEvaluationRow } from './tables/shipment-evaluations'
 import type { ShipmentRow } from './tables/shipments'
 import type { SimulatorRow } from './tables/simulator'
 import type { SiteRow } from './tables/sites'
@@ -31,6 +32,7 @@ export interface RowTypes {
   activity: ActivityRow
   alerts: AlertRow
   documents: DocumentRow
+  shipmentEvaluations: ShipmentEvaluationRow
   simulator: SimulatorRow
 }
 
@@ -54,6 +56,7 @@ const TABLE_NAME_SET: Record<TableName, true> = {
   activity: true,
   alerts: true,
   documents: true,
+  shipmentEvaluations: true,
   simulator: true,
 }
 // Object.keys widens the keys to string.
@@ -75,6 +78,7 @@ export function createTables(): Tables {
     activity: new Table(),
     alerts: new Table(),
     documents: new Table(),
+    shipmentEvaluations: new Table(),
     simulator: new Table(),
   }
 }

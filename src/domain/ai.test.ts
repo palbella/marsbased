@@ -9,7 +9,14 @@ import {
 
 const envelope = {
   confidence: 0.9,
-  evidence: ['Vessel departed Valencia 18 h late', 'BlueWave ETA update, 2 h ago'],
+  evidence: [
+    {
+      text: 'Vessel departed Valencia 18 h late',
+      ref: { kind: 'milestone', id: 'ms_leg_016_2_vessel_departed' },
+    },
+    { text: 'BlueWave ETA update, 2 h ago', ref: { kind: 'raw_event', id: 'evt_016_14' } },
+    { text: 'Key account' },
+  ],
   generatedAt: '2026-11-05T10:00:00Z',
   model: 'mock-v1',
 }
@@ -78,6 +85,18 @@ describe('AiInsight schemas', () => {
   it('rejects a confidence outside 0..1 (P3)', () => {
     const value = { ...envelope, confidence: 1.2, kind: 'summary', content: { text: 'Hi' } }
     expect(shipmentSummaryInsightSchema.safeParse(value).success).toBe(false)
+  })
+
+  it('rejects evidence as plain text or with an unknown reference kind (02 §6.3)', () => {
+    const value = (evidence: unknown) => ({
+      ...envelope,
+      evidence,
+      kind: 'summary',
+      content: { text: 'Hi' },
+    })
+    expect(shipmentSummaryInsightSchema.safeParse(value(['Key account'])).success).toBe(false)
+    const unknownRef = [{ text: 'Key account', ref: { kind: 'account', id: 'acc_001' } }]
+    expect(shipmentSummaryInsightSchema.safeParse(value(unknownRef)).success).toBe(false)
   })
 
   it('rejects a predicted ETA not labelled as predicted (BR-ETA-06)', () => {

@@ -10,6 +10,7 @@ import {
 } from '@/domain'
 import { createClock } from '@/mocks/clock'
 import { createDatabase } from './database'
+import { seedRows } from './seed'
 import { createMemoryStorage } from './storage'
 
 const clock = createClock(
@@ -57,11 +58,14 @@ describe('seed catalogue (07)', () => {
     ])
   })
 
-  it('SD-02: sessions, exceptions, alerts and activity start empty', () => {
+  it('SD-02: exceptions, alerts and activity are never hand-written; sessions start empty', () => {
+    const rows = seedRows(clock)
+
+    expect(rows.exceptions).toEqual([])
+    expect(rows.alerts).toEqual([])
+    expect(rows.activity).toEqual([])
+    expect(rows.shipmentEvaluations).toEqual([])
     expect(db.sessions.all()).toEqual([])
-    expect(db.exceptions.all()).toEqual([])
-    expect(db.alerts.all()).toEqual([])
-    expect(db.activity.all()).toEqual([])
   })
 
   it('every foreign key resolves', () => {
