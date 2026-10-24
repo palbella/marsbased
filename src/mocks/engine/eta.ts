@@ -7,6 +7,9 @@ import { BOOKING_SOURCE, type MilestoneView } from './timeline'
 
 export const SYSTEM_SOURCE = 'system'
 
+// The ETA as the engine derives it; the API adds its `basis` sentence (shipment mapper).
+export type EtaView = Omit<Eta, 'basis'>
+
 // The milestone planned at each leg's arrival (BR-MS-03), which ends BR-ETA-03.
 const ARRIVAL_MILESTONES: MilestoneType[] = ['arrived_port', 'vessel_arrived', 'delivered']
 
@@ -21,12 +24,12 @@ export interface EtaInput {
 }
 
 // BR-ETA-01..05: the first rule that applies wins; every ETA keeps its source (P1).
-export function deriveEta(input: EtaInput): Eta {
+export function deriveEta(input: EtaInput): EtaView {
   const eta = delivered(input) ?? lastLegEstimate(input) ?? earlierLegEstimate(input)
   return { ...(eta ?? systemEstimate(input)), outdated: input.outdated }
 }
 
-type EtaValue = Omit<Eta, 'outdated'>
+type EtaValue = Omit<EtaView, 'outdated'>
 
 // BR-ETA-01.
 function delivered({ milestones }: EtaInput): EtaValue | null {

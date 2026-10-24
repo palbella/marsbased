@@ -119,3 +119,22 @@ describe('07 §4: every shipment shows its state after seeding (SD-02)', () => {
     )
   })
 })
+
+describe('BR-MS-03: every seeded plan keeps its milestones in time order', () => {
+  it.each(seededDb.shipments.all().map((shipment) => shipment.reference))('%s', (reference) => {
+    const planned = seededShipment(reference)
+      .view.milestones // Customs is submitted at the sea arrival, before the discharge it follows.
+      .filter((milestone) => milestone.type !== 'customs_submitted')
+      .map((milestone) => Date.parse(milestone.planned.value))
+    expect(planned).toEqual([...planned].sort((a, b) => a - b))
+  })
+
+  it('SH-10407: out for delivery is planned after the departure', () => {
+    const { view } = seededShipment('SH-10407')
+    const plannedAt = (type: string) =>
+      view.milestones.find((milestone) => milestone.type === type)?.planned.value ?? ''
+    expect(Date.parse(plannedAt('out_for_delivery'))).toBeGreaterThan(
+      Date.parse(plannedAt('departed_site')),
+    )
+  })
+})

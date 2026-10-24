@@ -13,7 +13,7 @@ export function matchesShipmentFilters(
 ): boolean {
   const { legs, shipment } = facts
   const checks = [
-    filters.view === undefined || matchesView({ facts, view }, filters.view, now),
+    filters.view === undefined || matchesView(view, filters.view, now),
     filters.status === undefined || view.status === filters.status,
     filters.onTime === undefined || view.onTime === filters.onTime,
     filters.site === undefined || shipment.originSiteId === filters.site,
@@ -26,7 +26,11 @@ export function matchesShipmentFilters(
   return checks.every(Boolean)
 }
 
-function matchesView({ view }: LoadedShipment, kind: 'active' | 'delivered', now: Date): boolean {
+function matchesView(
+  view: LoadedShipment['view'],
+  kind: 'active' | 'delivered',
+  now: Date,
+): boolean {
   if (kind === 'active') return !view.delivered
   // BR-ETA-01: once delivered, the ETA is the actual delivery date.
   return view.delivered && hoursBetween(view.eta.value, now) <= DELIVERED_VIEW_HOURS

@@ -5,7 +5,8 @@ import type { Eta, OnTimeIndicator, ShipmentStatus } from '@/domain'
 export interface ShipmentEvaluationRow {
   id: string
   onTime: OnTimeIndicator
-  eta: Eta
+  // As derived; the API adds the `basis` sentence on read.
+  eta: Omit<Eta, 'basis'>
   status: ShipmentStatus
   evaluatedAt: string
 }

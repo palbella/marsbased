@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import type { Eta } from '@/domain'
+import type { EtaView } from './eta'
 import { compareAttention, deriveOnTime, type AttentionItem } from './on-time'
 import { NOW, at } from './test-fixtures'
 
 const PLANNED = at(10)
 
-function eta(hours: number, outdated = false): Eta {
+function eta(hours: number, outdated = false): EtaView {
   const value = at(hours)
   return {
     value,

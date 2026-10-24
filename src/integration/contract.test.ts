@@ -54,6 +54,16 @@ describe('02 §5.1 rule 1: the API is the contract', () => {
       expect(await authService.me()).toMatchObject({ role: 'customer' })
       expect(await shipmentsService.list({ view: 'active', q: '104' })).not.toHaveLength(0)
       expect((await shipmentsService.getById(atSea)).reference).toBe('SH-10433')
+      // SC-04: the route summary the compact transit line is drawn from.
+      expect(await shipmentsService.getById(delivered)).toMatchObject({
+        hasCustoms: true,
+        lastDoneMilestone: { type: 'delivered' },
+      })
+      // SC-03: confirmed dates need no basis; our estimates say what they are based on.
+      expect((await shipmentsService.getById(delivered)).eta?.basis).toBeNull()
+      expect((await shipmentsService.getById(shipmentIdOf('SH-10436'))).eta?.basis).toBe(
+        'BlueWave moved the vessel arrival 2 h ago',
+      )
       expect((await shipmentsService.getTimeline(atSea)).milestones).not.toHaveLength(0)
       expect((await aiService.getSummary(atSea)).kind).toBe('summary')
       expect((await aiService.getEtaPrediction(atSea))?.kind).toBe('eta_prediction')

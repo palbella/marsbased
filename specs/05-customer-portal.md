@@ -25,13 +25,35 @@ alone (NFR-04).
 
 **SC-03 — `SourcedDate`.** Renders a `Sourced<string>` date with provenance typography
 (DS-05) and its source tooltip. Flagged as outdated (BR-ETA-05), it adds "may be outdated"
-and the last update time.
+and the last update time. Tooltip copy by source:
+
+| Source | Tooltip |
+|--------|---------|
+| operator, `confirmed` | "Confirmed by {operator} · {observedAt}" |
+| operator, `estimated` | "Estimated by {operator} · {observedAt}" |
+| `booking` | "Planned at booking" |
+| `system` | "Our estimate, based on {eta.basis}" (or just "Our estimate" when `basis` is null) |
+| `ai` | "AI prediction · {confidence}% confidence" |
+
+Milestone labels are the sentence case of the type ("Vessel departed", "Customs hold"),
+defined once in `domain/rules/labels.ts`. The on-time tooltip reason comes from a pure
+`onTimeReason()` that rephrases the BR-OT-01 case that applied.
 
 **SC-04 — `TransitLine`.** The route as a metro line (DS-04): legs as segments with their
 mode glyph and operator, milestones as stops, solid for confirmed, dashed for planned and
 estimated, the current position (BR-MS-06) as a `--signal` square, customs as a stamp-shaped
-stop when it applies (BR-MS-02). *Compact* variant: one line, no labels, used in list rows.
-*Full* variant: stop labels and `SourcedDate`s; scrolls horizontally on mobile.
+stop when it applies (BR-MS-02). *Compact* variant: one stop per **place** (origin, ports,
+customs, destination), one line, no labels, used in list rows; built from the shipment
+alone (`legs`, `hasCustoms`, `lastDoneMilestone`): sections before the latest done
+milestone are solid, the marker sits mid-section while moving or on the place when that
+milestone ends its section (`arrived_port`, `discharged`, `customs_cleared`, `delivered`). *Full* variant: one stop
+per **milestone**, grouped by leg, with place labels at leg boundaries and leg operator and
+mode above each segment, plus `SourcedDate`s; customs is a single stamp-shaped stop
+covering both customs milestones; scrolls horizontally on mobile. Current-position marker:
+none for booked shipments (all dashed), on the final stop when delivered, otherwise on
+the latest done milestone. While a customs hold is open, the customs stop is outlined in
+`--late` and labelled "Customs · on hold", in addition to the marker (never colour
+alone).
 
 **SC-05 — `ShipmentTimeline`.** Vertical detail of the transit line: milestones grouped by
 leg (header: mode glyph, operator, tracking number in mono), in plan order. Each stop shows

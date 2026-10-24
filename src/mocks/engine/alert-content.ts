@@ -1,4 +1,5 @@
-import type { AlertType, Eta, SourcedDate } from '@/domain'
+import type { AlertType, SourcedDate } from '@/domain'
+import type { EtaView } from './eta'
 import { findOperator, type ShipmentFacts } from './facts'
 import type { ShipmentView } from './shipment-view'
 import { hoursBetween } from './time'
@@ -61,6 +62,6 @@ function atRiskMessage(facts: ShipmentFacts, view: ShipmentView, behind: string)
 }
 
 // The ETA impact carries plain sourced dates (BR-AL-03).
-export function asSourcedDate({ value, provenance, source, observedAt }: Eta): SourcedDate {
+export function asSourcedDate({ value, provenance, source, observedAt }: EtaView): SourcedDate {
   return { value, provenance, source, observedAt }
 }

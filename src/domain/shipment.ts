@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { idSchema, isoDateTimeSchema, modeSchema } from './primitives'
 import { sourcedDateSchema } from './provenance'
+import { milestoneTypeSchema } from './timeline'
 
 // BR-ST-01, BR-ST-02.
 export const shipmentStatusSchema = z.enum([
@@ -45,6 +46,9 @@ export const etaSchema = sourcedDateSchema.extend({
   outdated: z.boolean(),
   // The operator event an `estimated` ETA derives from (BR-ETA-02/03), for traceability (P1).
   rawEventId: idSchema.nullable(),
+  // SC-03: a short, customer-safe sentence on what a system estimate is based on (BR-ETA-03/04),
+  // e.g. "the vessel departed 18 h late"; null when there is nothing to explain.
+  basis: z.string().min(1).nullable(),
 })
 export type Eta = z.infer<typeof etaSchema>
 
@@ -69,6 +73,11 @@ export const shipmentSchema = z.object({
   lastEventAt: isoDateTimeSchema.nullable(),
   // BR-SL-02.
   stale: z.boolean(),
+  // Route summary for the compact transit line (SC-04), so list rows need no timeline.
+  // BR-MS-02.
+  hasCustoms: z.boolean(),
+  // BR-ST-01: the latest done milestone in plan order; legId null for the customs block.
+  lastDoneMilestone: z.object({ type: milestoneTypeSchema, legId: idSchema.nullable() }).nullable(),
   // Ops only: customers never see exceptions (CP-16, BR-PM-04).
   openExceptionCount: z.number().int().nonnegative().optional(),
 })

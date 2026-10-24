@@ -144,6 +144,8 @@ T12 reduced to a 360 px check.
 - `RealtimeClient` with `BroadcastChannel` + local dispatch (02 §7), `useLiveUpdates`
   invalidating queries (BR-RT-*), simulator handlers and panel (OP-50..55), clock advance,
   network conditions selector with header warning chip.
+- Relative times in the UI ("2 h ago", `LastUpdated`, strip clock offset) read the
+  simulation clock (`GET /api/simulator/clock`) instead of the browser's `Date.now()`.
 - **Done when:** SIM-01, 02, 03 and 05 produce exactly the outcomes in 07 §6, verified with
   customer and ops in two tabs; the scenario outcomes also run as integration tests.
 

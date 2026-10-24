@@ -1,6 +1,6 @@
-import type { Eta, OnTimeIndicator, ShipmentStatus } from '@/domain'
+import type { OnTimeIndicator, ShipmentStatus } from '@/domain'
 import type { LegRow } from '@/mocks/db/tables/legs'
-import { deriveEta } from './eta'
+import { deriveEta, type EtaView } from './eta'
 import type { ShipmentFacts } from './facts'
 import { needsCustoms, planMilestones } from './milestone-plan'
 import { deriveOnTime } from './on-time'
@@ -26,7 +26,7 @@ export interface ShipmentView {
   latestDone: MilestoneView | null
   currentLeg: LegRow
   status: ShipmentStatus
-  eta: Eta
+  eta: EtaView
   // `ETA − plannedEta`, in hours (BR-OT-01).
   etaDeltaHours: number
   // BR-ETA-06: separate from the ETA; none once delivered, as nothing is left to predict.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { planMilestones } from './milestone-plan'
-import { at, multimodalLegs, roadLegs } from './test-fixtures'
+import { at, leg, multimodalLegs, roadLegs } from './test-fixtures'
 
 const types = (legs: ReturnType<typeof roadLegs>, country: string) =>
   planMilestones(legs, country).map((milestone) => milestone.type)
@@ -71,5 +71,20 @@ describe('BR-MS-03 Planned dates', () => {
       'leg_t_3:out_for_delivery': at(142),
       'leg_t_3:delivered': at(148),
     })
+  })
+
+  it('BR-MS-03 never plans out for delivery before a short road leg departs', () => {
+    // A 4 h leg: half its duration (2 h) is less than 6 h.
+    const planned = planMilestones([leg(1, 'road', 'op_tir', 20, 24)], 'ES')
+    const departure = planned.find((m) => m.type === 'departed_site')?.plannedAt
+    const outForDelivery = planned.find((m) => m.type === 'out_for_delivery')?.plannedAt
+
+    expect(departure).toBe(at(20))
+    expect(outForDelivery).toBe(at(22))
+  })
+
+  it('BR-MS-03 keeps the 6 h lead on a leg long enough for it', () => {
+    const planned = planMilestones(roadLegs(), 'ES')
+    expect(planned.find((m) => m.type === 'out_for_delivery')?.plannedAt).toBe(at(4))
   })
 })

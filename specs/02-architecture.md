@@ -649,8 +649,15 @@ interface Shipment {
   legs: Leg[]
   status: ShipmentStatus
   eta: Sourced<string> | null   // null = unknown, never invented
+  // eta also carries `outdated`, `rawEventId` and `basis`: a short, customer-safe sentence
+  // built by the mock from the BR-ETA rule that applied, e.g. "BlueWave moved the vessel
+  // arrival 2 h ago" or "the vessel departed 18 h late"; null when nothing to explain
   plannedEta: string
   lastEventAt: string
+  // Route summary for the compact transit line in list rows (SC-04), so lists need no
+  // timeline per row.
+  hasCustoms: boolean                                   // BR-MS-02
+  lastDoneMilestone: { type: MilestoneType; legId: string | null } | null  // BR-ST-01; legId null = customs block
 }
 
 type ExceptionType = 'delay' | 'hold' | 'stale' | 'customs_incident' | 'missing_document'

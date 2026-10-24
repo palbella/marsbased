@@ -7,6 +7,8 @@ import { notFound } from '@/mocks/http'
 export interface LoadedShipment {
   facts: ShipmentFacts
   view: ShipmentView
+  // When it was derived, for relative wording in responses (e.g. the ETA basis).
+  now: Date
 }
 
 export type ShipmentLoader = (shipmentId: string) => LoadedShipment
@@ -19,7 +21,7 @@ export function createShipmentLoader(db: Tables, now: Date): ShipmentLoader {
     if (cached) return cached
     const facts = loadShipmentFacts(db, shipmentId)
     if (!facts) throw notFound()
-    const shipment = { facts, view: deriveShipment(facts, now) }
+    const shipment = { facts, view: deriveShipment(facts, now), now }
     loaded.set(shipmentId, shipment)
     return shipment
   }

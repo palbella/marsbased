@@ -1,6 +1,6 @@
 import type { MilestoneType } from '@/domain'
 import type { LegRow } from '@/mocks/db/tables/legs'
-import { addHours } from './time'
+import { addHours, hoursBetween } from './time'
 
 // BR-MS-03: planned offsets, in hours, from the leg dates they hang off.
 const PICKUP_BEFORE_DEPARTURE_HOURS = 2
@@ -8,6 +8,9 @@ const LOADING_BEFORE_DEPARTURE_HOURS = 12
 const DISCHARGE_AFTER_ARRIVAL_HOURS = 12
 const CLEARANCE_AFTER_ARRIVAL_HOURS = 24
 const OUT_FOR_DELIVERY_BEFORE_ARRIVAL_HOURS = 6
+// On a short leg, out for delivery is capped at half its duration so it never comes before
+// the departure.
+const OUT_FOR_DELIVERY_MAX_SHARE_OF_LEG = 0.5
 
 // BR-MS-02: countries of the EU customs union; anything else needs customs.
 const EU_CUSTOMS_UNION = new Set([
@@ -54,11 +57,7 @@ function legKind(leg: LegRow, previous?: LegRow, next?: LegRow): LegKind {
 function legMilestones(kind: LegKind, leg: LegRow): PlannedMilestone[] {
   const { plannedDeparture: departure, plannedArrival: arrival } = leg
   const pickedUp = milestone(leg, 'picked_up', addHours(departure, -PICKUP_BEFORE_DEPARTURE_HOURS))
-  const outForDelivery = milestone(
-    leg,
-    'out_for_delivery',
-    addHours(arrival, -OUT_FOR_DELIVERY_BEFORE_ARRIVAL_HOURS),
-  )
+  const outForDelivery = milestone(leg, 'out_for_delivery', outForDeliveryAt(leg))
   const delivered = milestone(leg, 'delivered', arrival)
 
   switch (kind) {
@@ -80,6 +79,16 @@ function legMilestones(kind: LegKind, leg: LegRow): PlannedMilestone[] {
     case 'last_mile':
       return [pickedUp, outForDelivery, delivered]
   }
+}
+
+// BR-MS-03: last leg arrival − min(6 h, half the leg's planned duration).
+function outForDeliveryAt({ plannedDeparture, plannedArrival }: LegRow): string {
+  const legHours = hoursBetween(plannedDeparture, plannedArrival)
+  const lead = Math.min(
+    OUT_FOR_DELIVERY_BEFORE_ARRIVAL_HOURS,
+    legHours * OUT_FOR_DELIVERY_MAX_SHARE_OF_LEG,
+  )
+  return addHours(plannedArrival, -lead)
 }
 
 function customsMilestones(seaLeg: LegRow): PlannedMilestone[] {

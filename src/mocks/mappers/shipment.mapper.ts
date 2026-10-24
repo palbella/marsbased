@@ -2,10 +2,11 @@ import type { Leg, Shipment } from '@/domain'
 import type { LegRow } from '@/mocks/db/tables/legs'
 import { findOperator, type ShipmentFacts } from '@/mocks/engine/facts'
 import type { LoadedShipment } from '@/mocks/queries/shipment-loader'
+import { etaBasis } from './eta-basis'
 
 // `openExceptionCount` is passed for ops only: customers never see exceptions (CP-16).
 export function toShipmentResponse(
-  { facts, view }: LoadedShipment,
+  { facts, view, now }: LoadedShipment,
   openExceptionCount?: number,
 ): Shipment {
   const { shipment, account, originSite, legs } = facts
@@ -24,11 +25,17 @@ export function toShipmentResponse(
     legs: legs.map((leg) => toLegResponse(leg, facts)),
     currentLegId: view.currentLeg.id,
     status: view.status,
-    eta: view.eta,
+    eta: { ...view.eta, basis: etaBasis(view.eta, { facts, view }, now) },
     plannedEta: shipment.plannedEta,
     onTime: view.onTime,
     lastEventAt: view.lastEventAt,
     stale: view.staleness.stale,
+    hasCustoms: view.hasCustoms,
+    lastDoneMilestone: view.latestDone && {
+      type: view.latestDone.type,
+      // The customs block sits between legs (BR-MS-02), as in the timeline.
+      legId: view.latestDone.customs ? null : view.latestDone.legId,
+    },
     ...(openExceptionCount === undefined ? {} : { openExceptionCount }),
   }
 }

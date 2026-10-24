@@ -1,4 +1,5 @@
-import type { Eta, OnTimeIndicator, ShipmentStatus } from '@/domain'
+import type { OnTimeIndicator, ShipmentStatus } from '@/domain'
+import type { EtaView } from './eta'
 import { hoursBetween, isAfter } from './time'
 
 // BR-OT-01: `delta = ETA − plannedEta`, in hours.
@@ -11,7 +12,7 @@ const PREDICTED_AT_RISK_MIN_CONFIDENCE = 0.6
 const DELIVERY_GRACE_HOURS = 2
 
 export interface OnTimeInput {
-  eta: Eta
+  eta: EtaView
   plannedEta: string
   deliveredAt: string | null
   prediction: { predictedEta: string; confidence: number } | null
@@ -47,7 +48,7 @@ function predictsRisk(
 export interface AttentionItem {
   onTime: OnTimeIndicator
   status: ShipmentStatus
-  eta: Eta | null
+  eta: EtaView | null
 }
 
 // BR-OT-03: late → at_risk → on_hold → unknown → on_time, then by ETA ascending.

@@ -1,4 +1,4 @@
-import type { Eta } from '@/domain'
+import type { EtaView } from '@/mocks/engine/eta'
 import type { ShipmentFacts } from '@/mocks/engine/facts'
 
 const HOURS_PER_DAY = 24
@@ -25,7 +25,7 @@ export function formatDuration(hours: number): string {
 }
 
 // BR-AI-01: "estimated by BlueWave", "our estimate", P1: always say where a date comes from.
-export function describeEtaSource(eta: Eta, facts: ShipmentFacts): string {
+export function describeEtaSource(eta: EtaView, facts: ShipmentFacts): string {
   if (eta.provenance === 'confirmed') return 'confirmed'
   if (eta.source === 'booking') return 'as planned at booking'
   if (eta.source === 'system') return 'our estimate'

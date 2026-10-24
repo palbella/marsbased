@@ -78,7 +78,7 @@ the event's `receivedAt`.
   | `discharged` | sea leg arrival + 12 h |
   | `customs_submitted` | sea leg arrival |
   | `customs_cleared` | sea leg arrival + 24 h |
-  | `out_for_delivery` | last leg arrival − 6 h |
+  | `out_for_delivery` | last leg arrival − min(6 h, half the last leg's planned duration), so it is never planned before the leg departs |
   | `delivered` | last leg arrival |
 
   Planned dates have provenance `estimated`, source `booking`.
