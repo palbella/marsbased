@@ -47,8 +47,9 @@ Operations use the bridge (dense, fast, keyboard-first); customers use the manif
 | `--unknown` | `#7B8088` | Unknown, stale |
 | `--predicted` | `#2F46C8` | Cobalt: AI notes and predicted values only |
 
-- **Contrast (NFR-04):** `--signal` is used as a fill with `--ink` text (contrast > 6:1),
-  or as text only at ≥ 18 px. Status colours always come with an icon and a word.
+- **Contrast (NFR-04):** `--signal` is used as a fill with `--ink` text, as text of any
+  size on `--ink` (≈ 5.5:1, AA), or as text on `--paper` only at ≥ 18 px. Status colours
+  always come with an icon and a word.
 - **Type:** IBM Plex Sans (UI text), IBM Plex Sans Condensed (headings, large figures,
   nav labels), IBM Plex Mono (references, codes, times, raw payloads). All numbers use
   `tabular-nums`. Loaded with `next/font`, self-hosted.
@@ -205,7 +206,7 @@ Copy is short and specific: "ALL CLEAR — Nothing needs your attention right no
 |------|------|-------|---------|------|
 | customer | Arrivals | `/portal` | — | US-C-01 |
 | customer | Alerts | `/portal/alerts` | unread | US-C-04 |
-| ops_agent, ops_manager | Attention | `/ops` | open exceptions | US-O-01 |
+| ops_agent, ops_manager | Attention | `/ops` | active exceptions (open + acknowledged) | US-O-01 |
 | ops_agent, ops_manager | Shipments | `/ops/shipments` | — | US-O-02 |
 | ops_agent, ops_manager | Mappings | `/ops/mappings` | unmapped | US-O-05 (S) |
 | all (non-production) | Simulator | opens side panel | — | US-R-02 |
@@ -221,7 +222,8 @@ Copy is short and specific: "ALL CLEAR — Nothing needs your attention right no
 - THE empty, error and not-found states SHALL use the stamp pattern with a short, specific
   message and one action: `ALL CLEAR` (empty queue), `NOTHING IN TRANSIT` (no active
   shipments), `NO SIGNAL` (service unavailable, with *Retry*), `NOT FOUND` (with a link
-  back), `OFFLINE` (browser offline).
+  back), `OFFLINE` (browser offline), `ERROR` (render error caught by a boundary, with
+  *Try again*).
 - Loading states SHALL be skeletons in the shape of the content (rows, transit line), never
   a centred spinner.
 
@@ -256,11 +258,16 @@ Copy is short and specific: "ALL CLEAR — Nothing needs your attention right no
   the email filled in.
 - WHEN sign-in succeeds THE SYSTEM SHALL redirect to the role's home (or to the originally
   requested page, if it belongs to that role).
+- THE `next` parameter SHALL be honoured only if it starts with `/`, does not start with
+  `//`, and contains neither `://` nor `\` (browsers read `/\host` as `//host`) — no open
+  redirects — and is under the role's area
+  (`/portal` or `/ops`) or `/profile`; otherwise THE SYSTEM SHALL go to the role's home.
 - WHEN a signed-in user opens `/sign-in` THE SYSTEM SHALL redirect to their home.
 
 **UI-07 — Test accounts** (M, non-production only)
 - THE page SHALL list the seeded users as a crew list (name, role, perimeter, *Use*) under
-  the form, with the shared password shown once.
+  the form, with the shared password shown once, from `GET /api/simulator/test-accounts`
+  (never hardcoded in UI code).
 - WHEN *Use* is clicked THE SYSTEM SHALL fill email and password; the user still submits.
 - THE list SHALL be hidden when `NEXT_PUBLIC_API_MOCKING` is not `enabled`.
 
@@ -293,14 +300,15 @@ Customer                 Alba Retail S.L.
   redirect to `/sign-in?next=<path>`.
 - WHILE the session is being resolved (`GET /api/auth/me`) THE shell SHALL show a skeleton,
   never a flash of the wrong role's content.
-- WHEN any request returns `401` THE SYSTEM SHALL sign the tab out and redirect to
-  `/sign-in` with the message "Your session has expired".
+- WHEN any request that carried a session token returns `401` THE SYSTEM SHALL sign the
+  tab out and redirect to `/sign-in?reason=expired` with the message "Your session has
+  expired". A `401` from a request without a token (a failed sign-in) is not an expiry.
 
 ## 10. Components
 
 | Component | Location | Notes |
 |-----------|----------|-------|
-| Design tokens | `app/globals.css` + `tailwind.config.ts` | §1.2 as CSS variables mapped to Tailwind theme |
+| Design tokens | `app/globals.css` | §1.2 as CSS variables mapped to the Tailwind v4 theme with `@theme` |
 | `AppShell` | `features/shell` | Grid layout: strip, rail, scrolling main |
 | `StatusStrip` | `features/shell` | DS-01: wordmark, live indicator, clock, chips, bell, user menu |
 | `InkRail` | `features/shell` | DS-02: renders `navigation[role]`, counters |
@@ -308,7 +316,7 @@ Customer                 Alba Retail S.L.
 | `PageHeader` | `components/ui` | Condensed title, field-label subtitle, actions slot |
 | `FieldBlock` | `components/ui` | DS-03: label + value, ruled |
 | `Stamp` | `components/ui` | DS-10 |
-| `FlipValue` | `components/ui` | DS-07 |
+| `FlipValue` | `components/ui` | DS-07 (task T17; counters render plain values until then) |
 | `SignInForm`, `TestAccounts`, `SignInHero` | `features/session` | |
 | `ProfileBlocks` | `features/session` | |
 

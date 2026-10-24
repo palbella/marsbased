@@ -42,5 +42,6 @@ export const queryKeys = {
   },
   simulator: {
     network: () => ['simulator', 'network'] as const,
+    testAccounts: () => ['simulator', 'test-accounts'] as const,
   },
 }

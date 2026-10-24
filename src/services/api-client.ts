@@ -12,6 +12,7 @@ import {
   UnavailableError,
   ValidationError,
 } from './errors'
+import { notifySessionExpired } from './session-expiry'
 import { tokenStore } from './token-store'
 
 // 02 §5.7: the only thing services know about the backend.
@@ -20,6 +21,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api'
 const DEFAULT_TIMEOUT_MS = 10_000
 const UPLOAD_TIMEOUT_MS = 30_000
 const NO_CONTENT = 204
+const UNAUTHORIZED = 401
 
 export interface RequestOptions {
   // TanStack Query's signal, so leaving a view aborts its requests.
@@ -98,11 +100,12 @@ async function send({ method, path, json, form, options = {} }: ApiRequest) {
   const context: RequestContext = { method, path, status: null, requestId }
   const timeout = AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS)
   const signals = options.signal ? [timeout, options.signal] : [timeout]
+  const token = tokenStore.get()
   let response: Response
   try {
     response = await fetch(`${API_URL}${path}`, {
       method,
-      headers: headersFor(requestId, json !== undefined),
+      headers: headersFor(requestId, token, json !== undefined),
       body: form ?? (json === undefined ? undefined : JSON.stringify(json)),
       signal: AbortSignal.any(signals),
     })
@@ -110,16 +113,23 @@ async function send({ method, path, json, form, options = {} }: ApiRequest) {
     throw transportError(error, timeout, context)
   }
   const answered = { ...context, status: response.status }
+  if (response.status === UNAUTHORIZED) endSession(token)
   if (!response.ok) throw await toApiError(response, answered)
   return { response, context: answered }
 }
 
-function headersFor(requestId: string, hasJson: boolean): Headers {
+function headersFor(requestId: string, token: string | null, hasJson: boolean): Headers {
   const headers = new Headers({ 'x-request-id': requestId })
-  const token = tokenStore.get()
   if (token) headers.set('authorization', `Bearer ${token}`)
   if (hasJson) headers.set('content-type', 'application/json')
   return headers
+}
+
+// UI-09, 02 §8: a 401 clears the tab's session, but it is an expiry only if the request
+// carried a token; without one (a failed sign-in) it means invalid credentials.
+function endSession(sentToken: string | null): void {
+  tokenStore.clear()
+  if (sentToken !== null) notifySessionExpired()
 }
 
 // No response: our timeout → TimeoutError; the caller's abort is a cancellation, not an
@@ -135,7 +145,6 @@ async function toApiError(response: Response, context: RequestContext): Promise<
   const message = body.success ? body.data.message : response.statusText || 'Request failed.'
   const code = body.success ? body.data.code : 'unknown'
   const error = errorFor(response.status, message, code, context)
-  if (response.status === 401) tokenStore.clear()
   // 02 §5.8: expected API errors are business outcomes, not incidents.
   if (!(error instanceof UnavailableError)) {
     monitoring.addBreadcrumb({
@@ -148,7 +157,7 @@ async function toApiError(response: Response, context: RequestContext): Promise<
 }
 
 function errorFor(status: number, message: string, code: string, context: RequestContext) {
-  if (status === 401) return new UnauthorizedError(message, status, code, context)
+  if (status === UNAUTHORIZED) return new UnauthorizedError(message, status, code, context)
   if (status === 403) return new ForbiddenError(message, status, code, context)
   if (status === 404) return new NotFoundError(message, status, code, context)
   if (status === 409) return new ConflictError(message, status, code, context)

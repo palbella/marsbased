@@ -1,4 +1,4 @@
-import { networkConditionsSchema, type FailureMode } from '@/domain'
+import { networkConditionsSchema, testAccountsSchema, type FailureMode } from '@/domain'
 import { apiGet, apiPost, type RequestOptions } from './api-client'
 
 // US-R-02, non-production only. Scenarios, clock and reset arrive with T11.
@@ -8,4 +8,7 @@ export const simulatorService = {
     apiGet('/simulator/network', networkConditionsSchema, options),
   setNetwork: (mode: FailureMode) =>
     apiPost('/simulator/network', { mode }, networkConditionsSchema),
+  // UI-07: answered without a session.
+  getTestAccounts: (options?: RequestOptions) =>
+    apiGet('/simulator/test-accounts', testAccountsSchema, options),
 }

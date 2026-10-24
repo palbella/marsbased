@@ -24,7 +24,13 @@ export const authService = {
     }
   },
 
-  me: (options?: RequestOptions) => apiGet('/auth/me', userSchema, options),
+  // Restores a tab's session (ADR-009). The monitoring user is set here, not in a React
+  // effect, so render errors in the first commit already carry it (02 §5.8).
+  me: async (options?: RequestOptions): Promise<User> => {
+    const user = await apiGet('/auth/me', userSchema, options)
+    monitoring.setUser({ id: user.id, role: user.role })
+    return user
+  },
 
   hasSession: (): boolean => tokenStore.get() !== null,
 }

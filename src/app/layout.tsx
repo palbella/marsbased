@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import type { PropsWithChildren } from 'react'
+import { fontVariables } from './fonts'
 import { MockProvider } from './mock-provider'
+import { AppProviders } from './providers'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -9,9 +11,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
-    <html lang="en">
+    <html lang="en" className={fontVariables}>
       <body>
-        <MockProvider>{children}</MockProvider>
+        <MockProvider>
+          <AppProviders>{children}</AppProviders>
+        </MockProvider>
       </body>
     </html>
   )
