@@ -6,6 +6,7 @@ import type {
 } from '@/domain'
 import type { Tables } from '@/mocks/db/schema'
 import type { ExceptionRow } from '@/mocks/db/tables/exceptions'
+import { storeDocument } from '../documents'
 import { nextId, recordActivity } from '../records'
 import { recompute } from '../recompute'
 
@@ -76,27 +77,7 @@ function notifyCustomer(context: ActionContext, payload: NotifyCustomerPayload):
 function uploadDocument(context: ActionContext, payload: UploadDocumentPayload): DomainEvent[] {
   const { db, exception, userId, now } = context
   const { shipmentId } = exception
-  const file = {
-    status: 'available' as const,
-    fileName: payload.fileName,
-    size: payload.size,
-    uploadedBy: userId,
-    uploadedAt: now.toISOString(),
-  }
-  const existing = db.documents
-    .where((row) => row.shipmentId === shipmentId)
-    .find((row) => row.type === payload.type)
-  if (existing) {
-    db.documents.update(existing.id, file)
-  } else {
-    const prefix = `doc_${shipmentId.replace('shp_', '')}`
-    db.documents.insert({
-      id: nextId(db.documents, prefix),
-      shipmentId,
-      type: payload.type,
-      ...file,
-    })
-  }
+  storeDocument(db, shipmentId, payload, userId, now)
   return [
     { type: 'document.changed', shipmentId },
     { type: 'exception.changed', shipmentId, exceptionId: exception.id },

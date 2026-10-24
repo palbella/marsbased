@@ -24,6 +24,14 @@ export const simulationClockSchema = z.object({
 })
 export type SimulationClock = z.infer<typeof simulationClockSchema>
 
+// 02 §5.6, OP-55: failure modes of the mock API, applied to the current tab.
+export const failureModeSchema = z.enum(['normal', 'slow', 'timeouts', 'flaky', 'down'])
+export type FailureMode = z.infer<typeof failureModeSchema>
+
+// GET / POST /api/simulator/network.
+export const networkConditionsSchema = z.object({ mode: failureModeSchema })
+export type NetworkConditions = z.infer<typeof networkConditionsSchema>
+
 // POST /api/simulator/clock (OP-52): the clock only moves forward.
 export const advanceClockRequestSchema = z.object({ hours: z.number().positive() })
 export type AdvanceClockRequest = z.infer<typeof advanceClockRequestSchema>

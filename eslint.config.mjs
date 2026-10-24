@@ -49,7 +49,29 @@ const eslintConfig = [
   },
   {
     // The mock bootstrap is the only app code allowed to load the mock backend.
-    files: ['src/mocks/**', 'src/app/mock-provider.tsx'],
+    files: ['src/app/mock-provider.tsx'],
+    rules: { 'no-restricted-imports': 'off' },
+  },
+  {
+    // 02 §3.2: services and mocks never import each other; they only meet over HTTP.
+    files: ['src/mocks/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/services', '@/services/*'],
+              message: 'Mocks are a backend: they never import the API client.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Integration tests drive services against the real handlers (02 §10), so they see both.
+    files: ['src/integration/**'],
     rules: { 'no-restricted-imports': 'off' },
   },
 ]

@@ -8,5 +8,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    // Node's fetch needs an absolute URL; any origin reaches the handlers.
+    env: { NEXT_PUBLIC_API_URL: 'http://localhost/api' },
   },
 })

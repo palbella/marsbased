@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { exceptionStatusSchema, exceptionTypeSchema } from './exception'
+import { exceptionTypeSchema } from './exception'
 import { idSchema, modeSchema } from './primitives'
 import { onTimeIndicatorSchema, shipmentStatusSchema } from './shipment'
 
@@ -25,9 +25,13 @@ export const shipmentFiltersSchema = z.object({
 })
 export type ShipmentFilters = z.infer<typeof shipmentFiltersSchema>
 
+// GET /api/exceptions `status` (02 §5.2): `active` (open + acknowledged) is the default (OP-01).
+export const exceptionStatusFilterSchema = z.enum(['active', 'resolved', 'all'])
+export type ExceptionStatusFilter = z.infer<typeof exceptionStatusFilterSchema>
+
 // GET /api/exceptions query parameters (02 §5.2).
 export const exceptionFiltersSchema = z.object({
-  status: exceptionStatusSchema.optional(),
+  status: exceptionStatusFilterSchema.optional(),
   type: exceptionTypeSchema.optional(),
   site: idSchema.optional(),
   operator: idSchema.optional(),
