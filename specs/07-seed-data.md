@@ -77,7 +77,8 @@ The sign-in test accounts hint (03 UI-07) lists them in this order.
 | `op_lmx` | LastMile Express MX | road (last mile, MX) | `lmx-text` | 1.20 |
 
 `delayFactor` is the historical ratio actual/planned duration used by BR-AI-05. SH-10432
-sails on *BW Meridian*; every other sea shipment on *BW Aurora*.
+sails on *BW Meridian*; every other sea shipment on *BW Aurora*. For a vessel with no
+history, BlueWave's default factor is 1.05.
 
 ### Payload examples and mappings (`statusMappings` seed)
 
@@ -94,7 +95,7 @@ sails on *BW Meridian*; every other sea shipment on *BW Aurora*.
 | `700` | `eta_update` (uses `eta`) |
 | `900` | `position_update` |
 
-**`eur-csv`** — `"DP;2026-11-10;08:15;BARCELONA"` (code; date; time; place)
+**`eur-csv`** — `"DP;2026-11-10;08:15;BARCELONA"` (code; date; time in UTC; place)
 
 | Code | Target |
 |------|--------|
@@ -126,9 +127,10 @@ sails on *BW Meridian*; every other sea shipment on *BW Aurora*.
 | `CSUB` | `customs_submitted` |
 | `CHLD` | `customs_hold` |
 | `CREL` | `customs_cleared` |
+| `POS` | `position_update` (daily AIS position report while at sea; `port` is the next port of call) |
 
 **`lmx-text`** — free-text statuses and a local date format (`DD/MM/YYYY HH:mm`, Mexico
-City time); the code is the normalised text:
+City time); the code is the status text, trimmed, compared exactly (case-sensitive):
 `{ "status": "On delivery route", "date": "10/11/2026 09:30", "city": "Querétaro" }`
 
 | Text | Target |
@@ -151,10 +153,14 @@ Valencia port (`op_tir` from Zaragoza or Bilbao, `op_pld` from Valencia Warehous
 Valencia → Veracruz (`op_bws`, vessels *BW Aurora* and *BW Meridian*) → customs → last mile
 Veracruz → Querétaro (`op_lmx`).
 
+"Arrival in N days" for sea shipments means the vessel reaching Veracruz (`vessel_arrived`).
+Planned leg windows include loading and unloading slots, so some road legs are longer than
+the distance alone suggests; this also keeps SD-04 margins.
+
 | Ref | Account | Origin | Destination | Operators | State at seed (relative to now) | Shows |
 |-----|---------|--------|-------------|-----------|----------------------------------|-------|
-| SH-10401 | Alba | Zaragoza | Madrid | TIR | In transit, departed 3 h ago, ETA in 5 h | on time; **SIM-05** |
-| SH-10402 | Alba | Barcelona | Sevilla | EUR | Out for delivery since 1 h ago, ETA in 4 h | on time |
+| SH-10401 | Alba | Zaragoza | Madrid | TIR | In transit, departed 3 h ago, ETA in 10 h | on time; **SIM-05** |
+| SH-10402 | Alba | Barcelona | Sevilla | EUR | Out for delivery since 1 h ago; EuroRoad `NEWETA` sets ETA in 4 h | on time |
 | SH-10403 | Alba | Bilbao | Valencia | TIR | Delivered yesterday, on time | delivered + POD |
 | SH-10404 | Alba | Zaragoza | Málaga | EUR | In transit, departed 5 h late | `at_risk` (+5 h) |
 | SH-10405 | Nexo | Valencia | Madrid | TIR | Delivered 2 days ago, 4 h late | delivered late |
@@ -171,21 +177,33 @@ Veracruz → Querétaro (`op_lmx`).
 | SH-10436 | Corvane MX | Valencia | Querétaro, MX | PLD · BWS · LMX | At sea, BWS `ETA` +30 h, 2 h ago | `delay` high, customer not messaged |
 | SH-10438 | Corvane MX | Valencia | Querétaro, MX | PLD · BWS · LMX | At sea, arrival in 40 h, commercial invoice pending | `missing_document` medium |
 | SH-10441 | Corvane MX | Valencia | Querétaro, MX | PLD · BWS · LMX | `CHLD` 5 h ago, customs declaration pending | `hold` high, upload suggested |
-| SH-10444 | Corvane MX | Zaragoza | Querétaro, MX | TIR · BWS · LMX | `CSUB` 60 h ago, no clearance; operator contacted 20 h ago | `customs_incident`, waiting on operator (no `stale`, BR-EX-11) |
+| SH-10444 | Corvane MX | Zaragoza | Querétaro, MX | TIR · BWS · LMX | `CSUB` 72 h ago, no clearance (incident raised 24 h ago); operator contacted 20 h ago; committed date in 3 days | `customs_incident`, waiting on operator (no `stale`, BR-EX-11); on-time `unknown` (ETA outdated, BR-ETA-05) |
 | SH-10447 | Corvane MX | Valencia | Querétaro, MX | PLD · BWS · LMX | `CSUB` 6 h ago | `in_customs`; **SIM-02** |
 | SH-10450 | Corvane MX | Valencia | Querétaro, MX | PLD · BWS · LMX | Last mile, out for delivery 2 h ago | **SIM-04** |
 | SH-10452 | Corvane MX | Zaragoza | Querétaro, MX | TIR · BWS · LMX | Delivered 3 days ago | complete multimodal timeline |
 
-Every shipment has a tracking number per leg (`TIR-…`, `EUR-…`, `BWS-BL-…`, `LMX-…`) and
-the raw events needed to reach its state, with realistic gaps (e.g. SH-10433 has no `LOAD`
-event, so that milestone shows "Not reported by operator", BR-MS-04).
+Every shipment has a tracking number per leg (`TIR-…`, `EUR-…`, `PLD-…`, `BWS-BL-…`,
+`LMX-…`) and the raw events needed to reach its state, with realistic gaps (e.g. SH-10433
+has no `LOAD` event, so that milestone shows "Not reported by operator", BR-MS-04).
+Every voyage, finished or not, has one BlueWave `POS` event per day at sea, so no shipment
+is or was stale by silence alone (BR-SL-01).
 
 ### Documents
 
-Per BR-NA-03. All required documents are `available` once the related milestone is done,
-except:
+Per BR-NA-03. Required documents become `available` when this milestone is done:
+
+| Document | Available from |
+|----------|----------------|
+| CMR (road shipments) | `picked_up` |
+| Commercial invoice, packing list (sea shipments) | booking, dated 48 h before pickup |
+| Bill of lading | `vessel_departed` |
+| Customs declaration | `customs_submitted` |
+| Proof of delivery | `delivered` |
+
+Multimodal shipments are sea shipments for document purposes: no CMR. Exceptions:
 - SH-10438: commercial invoice `pending`.
-- SH-10441: customs declaration `pending`.
+- SH-10441: customs declaration `pending` (`CSUB` came before `CHLD`, so it is required and
+  upload is suggested).
 - Booked shipments: everything `pending`.
 
 Downloads return a generic sample PDF (`public/sample-document.pdf`) with the right file

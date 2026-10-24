@@ -137,8 +137,9 @@ first rule that applies wins:
 
   | Indicator | Condition (first match wins) |
   |-----------|------------------------------|
+  | `late` | `now > plannedEta` and not delivered (a fact, independent of data freshness) |
   | `unknown` | ETA flagged outdated (BR-ETA-05) |
-  | `late` | `delta > 12 h`, or `now > plannedEta` and not delivered |
+  | `late` | `delta > 12 h` |
   | `at_risk` | `2 h < delta ≤ 12 h`, or the AI predicts `predictedEta − plannedEta > 12 h` with confidence ≥ 0.6 |
   | `on_time` | otherwise |
 

@@ -655,9 +655,17 @@ interface AiInsight<T> {
   kind: 'summary' | 'eta_prediction' | 'priority' | 'draft' | 'mapping'
   content: T
   confidence: number          // 0..1, rendered as low / medium / high
-  evidence: string[]          // facts used, e.g. "Vessel departed 18 h late"
+  evidence: Evidence[]        // facts used, rendered as footnotes (DS-06)
   generatedAt: string
   model: string               // 'mock-v1' in Phase 1
+}
+```
+
+```ts
+interface Evidence {
+  text: string                // e.g. "Vessel departed 18 h late"
+  // What the footnote links to; absent for facts without a visual anchor (e.g. account tier)
+  ref?: { kind: 'milestone' | 'raw_event' | 'document'; id: string }
 }
 ```
 
