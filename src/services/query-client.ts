@@ -1,4 +1,4 @@
-import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query'
+import { focusManager, MutationCache, QueryCache, QueryClient } from '@tanstack/react-query'
 import { monitoring } from '@/lib/monitoring'
 import { UnavailableError } from './errors'
 
@@ -14,6 +14,9 @@ export function createQueryClient(): QueryClient {
       queries: {
         retry: shouldRetryQuery,
         retryDelay: (attempt) => RETRY_BASE_DELAY_MS * 2 ** attempt,
+        // 02 §5.6 "Where errors are shown": a block that mounts on a failed query shows the
+        // error; it is fetched again by Retry, a realtime event or the tab regaining focus.
+        retryOnMount: false,
       },
       // Never repeat a side effect without the user.
       mutations: { retry: false },
@@ -22,8 +25,14 @@ export function createQueryClient(): QueryClient {
 }
 
 // `TimeoutError` is an `UnavailableError`. A 401/403/404/409/422 won't change by retrying.
+// TanStack Query pauses retries while the tab is hidden, which would leave the block on its
+// skeleton until the tab comes back; failing at once shows the error instead (02 §5.6).
 function shouldRetryQuery(failureCount: number, error: Error): boolean {
-  return error instanceof UnavailableError && failureCount < MAX_QUERY_RETRIES
+  return (
+    error instanceof UnavailableError &&
+    failureCount < MAX_QUERY_RETRIES &&
+    focusManager.isFocused()
+  )
 }
 
 // 02 §5.8: the cache's `onError` runs once, after the last retry. Contract errors are

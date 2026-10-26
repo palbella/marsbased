@@ -19,7 +19,7 @@ interface DocumentListProps {
   documents: Document[]
   // US-C-05, CP-14: the page downloads through the documents service.
   onDownload: (document: Document) => void
-  // Ops variant (06 §4): shows the upload button; the dialog is T09.
+  // Ops variant (06 §4): shows the upload button.
   onUpload?: () => void
   density?: Density
   className?: string

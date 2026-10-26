@@ -6,9 +6,15 @@ import type { SnapshotStorage } from './storage'
 export const SNAPSHOT_KEY = 'shipment-db:v1'
 const SCHEMA_VERSION = 2
 
+// SD-05: relative seed dates go stale, so a snapshot seeded longer ago than this reseeds.
+export const SEED_MAX_AGE_HOURS = 6
+const MS_PER_HOUR = 60 * 60 * 1000
+
 export interface Snapshot {
   version: number
   revision: number
+  // Real time (ms) of the last seed or reset. Snapshots written before SD-05 lack it.
+  seededAt?: number
   tables: TableRows
 }
 
@@ -24,19 +30,28 @@ export function readSnapshot(storage: SnapshotStorage): Snapshot | null {
   }
 }
 
-export function writeSnapshot(storage: SnapshotStorage, revision: number, tables: Tables): void {
+export function writeSnapshot(
+  storage: SnapshotStorage,
+  contents: { revision: number; seededAt: number | undefined; tables: Tables },
+): void {
   // Each Table serialises as its rows (Table.toJSON).
-  storage.write(SNAPSHOT_KEY, JSON.stringify({ version: SCHEMA_VERSION, revision, tables }))
+  storage.write(SNAPSHOT_KEY, JSON.stringify({ version: SCHEMA_VERSION, ...contents }))
+}
+
+// SD-05: measured in real time, so advancing the simulation clock never triggers a reseed.
+export function hasSeedAged(seededAt: number | undefined, realTime: number): boolean {
+  return seededAt === undefined || realTime - seededAt > SEED_MAX_AGE_HOURS * MS_PER_HOUR
 }
 
 // Checks the envelope only: rows are written by this module, so their shape follows the
 // schema version.
 function isCurrentSnapshot(value: unknown): value is Snapshot {
   if (!isRecord(value)) return false
-  const { version, revision, tables } = value
+  const { version, revision, seededAt, tables } = value
   return (
     version === SCHEMA_VERSION &&
     typeof revision === 'number' &&
+    (seededAt === undefined || typeof seededAt === 'number') &&
     isRecord(tables) &&
     TABLE_NAMES.every((name) => Array.isArray(tables[name]))
   )

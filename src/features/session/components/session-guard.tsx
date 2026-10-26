@@ -10,9 +10,16 @@ import { signInPathFor } from '../session-routes'
 // fallback (the shell skeleton), never a flash of the wrong role's content.
 interface SessionGuardProps {
   fallback: ReactNode
+  // Shown with the error when the session cannot be resolved, e.g. the way back to a working
+  // network mode (02 §5.6), since the shell and its simulator panel are not there yet.
+  unavailableActions?: ReactNode
 }
 
-export function SessionGuard({ fallback, children }: PropsWithChildren<SessionGuardProps>) {
+export function SessionGuard({
+  fallback,
+  unavailableActions,
+  children,
+}: PropsWithChildren<SessionGuardProps>) {
   const { session } = useSession()
   const router = useRouter()
   const pathname = usePathname()
@@ -24,6 +31,13 @@ export function SessionGuard({ fallback, children }: PropsWithChildren<SessionGu
   }, [reason, pathname, router])
 
   if (session.status === 'signed-in') return children
-  if (session.status === 'unavailable') return <ErrorState onRetry={session.retry} />
+  if (session.status === 'unavailable') {
+    return (
+      <>
+        <ErrorState onRetry={session.retry} />
+        {unavailableActions}
+      </>
+    )
+  }
   return fallback
 }

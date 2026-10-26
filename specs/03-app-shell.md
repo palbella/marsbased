@@ -113,7 +113,7 @@ primary action as a `--signal` button. Keyboard-first: `J`/`K` move, `Enter` ope
 `N` notify customer, `A` acknowledge, `?` shows the shortcuts; hints shown as `kbd` tags.
 
 **DS-09 — Arrivals agenda.** The customer home answers "when does it arrive?" first: shipments
-are grouped by arrival day (`TODAY`, `TOMORROW`, `THIS WEEK`, `LATER`), each row led by the
+are grouped by arrival day (`TODAY`, `TOMORROW`, `NEXT 7 DAYS`, `LATER`), each row led by the
 ETA in large condensed type, then the compact transit line and one status sentence.
 
 **DS-10 — Stamps.** States that deserve a pause are shown as a rubber stamp: uppercase
@@ -208,9 +208,11 @@ Copy is short and specific: "ALL CLEAR — Nothing needs your attention right no
 | customer | Alerts | `/portal/alerts` | unread | US-C-04 |
 | ops_agent, ops_manager | Attention | `/ops` | active exceptions (open + acknowledged) | US-O-01 |
 | ops_agent, ops_manager | Shipments | `/ops/shipments` | — | US-O-02 |
-| ops_agent, ops_manager | Mappings | `/ops/mappings` | unmapped | US-O-05 (S) |
+| ops_agent, ops_manager | Mappings | `/ops/mappings` | unmapped | US-O-05 (S), shipped with T15 |
 | all (non-production) | Simulator | opens side panel | — | US-R-02 |
 
+- The Mappings item and its counter ship with its page (T15); until then the rail has no
+  item for a route that does not exist.
 - Counters update live (US-R-01): they read from the same queries the pages use, and flip
   when they change (DS-07).
 - Navigation is declared as data per role (`features/shell/navigation.ts`), not hardcoded
@@ -220,10 +222,12 @@ Copy is short and specific: "ALL CLEAR — Nothing needs your attention right no
 
 **UI-10 — Stamped states** (M, DS-10)
 - THE empty, error and not-found states SHALL use the stamp pattern with a short, specific
-  message and one action: `ALL CLEAR` (empty queue), `NOTHING IN TRANSIT` (no active
-  shipments), `NO SIGNAL` (service unavailable, with *Retry*), `NOT FOUND` (with a link
-  back), `OFFLINE` (browser offline), `ERROR` (render error caught by a boundary, with
-  *Try again*).
+  message and one action: `ALL CLEAR` (empty queue; also no alerts for a customer),
+  `NOTHING IN TRANSIT` (no active shipments, with a link to *Delivered*), `NOTHING
+  DELIVERED` (no deliveries in the last 7 days, with a link to *Active*), `NO MATCHES`
+  (filters return nothing, with *Clear filters*), `NO SIGNAL` (service unavailable, with
+  *Retry*), `NOT FOUND` (with a link back), `OFFLINE` (browser offline), `ERROR` (render
+  error caught by a boundary, with *Try again*).
 - Loading states SHALL be skeletons in the shape of the content (rows, transit line), never
   a centred spinner.
 

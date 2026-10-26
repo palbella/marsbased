@@ -1,1 +1,5 @@
 export { DocumentList } from './components/document-list'
+export { DocumentTypeField, FileField } from './components/upload-fields'
+export { UploadDocumentDialog } from './components/upload-document-dialog'
+export { downloadDocument, useDocuments } from './hooks/use-documents'
+export { fileProblem, missingDocumentType } from './upload-rules'

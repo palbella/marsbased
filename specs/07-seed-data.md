@@ -23,6 +23,11 @@ Design goals:
 - **SD-04 Safe margins.** Apart from the scenario targets, no active shipment has its
   committed date, next planned milestone or staleness threshold within the next 3 h, so
   scenarios and small clock advances only change what they intend to.
+- **SD-05 Seeds don't age.** Relative dates (SD-01) are computed when the database is
+  created, but the database persists in the browser. When a persisted database is older
+  than **6 hours** (real time since it was seeded), it is reseeded on load with a fresh
+  "now", keeping sessions (like `reset()`). Every visit therefore shows the scenarios in
+  §4–§5, even days later.
 
 ## 2. Organisation
 
@@ -240,6 +245,6 @@ exercises the same code as real operator events. Expected outcomes are acceptanc
 | SIM-02 | Customs hold | `op_bws` `CHLD` for SH-10447 | Status `on_hold`; `hold` high with primary *Contact operator* (documents complete); `on_hold` alert for Corvane MX |
 | SIM-03 | Operator goes silent | Clock +2 h | SH-10421 has no event for 13 h → `stale` medium for Núria and Elena; customer view shows the stale banner; no customer alert (BR-AL-02); nothing else changes (SD-04) |
 | SIM-04 | Unknown status code | `op_lmx` "Parcel handed to recipient" for SH-10450 | Unmapped in Status mappings with suggestion `delivered` (~75%); timeline unchanged. On *Accept*: SH-10450 `delivered`, open exceptions resolved, `delivered` alert, POD `pending` |
-| SIM-05 | Delivery | `op_tir` `500` for SH-10401 | `delivered` (`confirmed`), on time; `delivered` alert for Alba; POD `available` |
+| SIM-05 | Delivery | `op_tir` `500` for SH-10401, with the proof of delivery transmitted by TIR (stored as `available`, BR-NA-03) | `delivered` (`confirmed`), on time; `delivered` alert for Alba; POD `available` |
 
 Reset (`POST /api/simulator/reset`) restores this exact state with a fresh "now".

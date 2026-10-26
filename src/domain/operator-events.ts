@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { mappingTargetSchema } from './mapping'
 import { idSchema, isoDateTimeSchema } from './primitives'
 
 // 07 §3: each operator reports in its own format. Codes stay free strings on purpose:
@@ -64,6 +65,9 @@ const rawEventBaseSchema = z.object({
   occurredAt: isoDateTimeSchema,
   receivedAt: isoDateTimeSchema,
   mappingStatus: mappingStatusSchema,
+  // BR-NM-01: what the code maps to; null while unmapped. Lets the ops timeline label the
+  // events that produce no milestone (06 §4).
+  target: mappingTargetSchema.nullable(),
 })
 
 export const rawEventSchema = z.discriminatedUnion('format', [

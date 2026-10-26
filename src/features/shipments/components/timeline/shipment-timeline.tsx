@@ -11,7 +11,9 @@ import {
 } from '@/domain'
 import { cn } from '@/lib/utils'
 import { operatorNames, type OperatorNames } from '../../source-label'
+import { EventRow } from './event-row'
 import { HoldRow } from './hold-row'
+import { interleave, type TimelineEvent } from './interleave'
 import { MilestoneRow, rowColumns, type TimelineVariant } from './milestone-row'
 
 interface ShipmentTimelineProps {
@@ -20,6 +22,8 @@ interface ShipmentTimelineProps {
   variant?: TimelineVariant
   // 06 §4: the raw operator event column, filled by the ops detail page.
   renderRawEvent?: (rawEventId: string) => ReactNode
+  // 06 §4, ops only: operator events with no milestone, placed in their leg.
+  events?: TimelineEvent[]
   className?: string
 }
 
@@ -29,6 +33,7 @@ export function ShipmentTimeline({
   timeline,
   variant = 'customer',
   renderRawEvent,
+  events = [],
   className,
 }: ShipmentTimelineProps) {
   const sections = useMemo(() => transitSections(shipment.legs, timeline), [shipment, timeline])
@@ -38,7 +43,12 @@ export function ShipmentTimeline({
     <div className={cn('border-y border-rule bg-sheet', className)}>
       <ColumnHeadings variant={variant} />
       {sections.map((section, index) => (
-        <TimelineSection key={index} section={section} rowProps={rowProps} />
+        <TimelineSection
+          key={index}
+          section={section}
+          events={events.filter((event) => sectionLegId(section) === event.legId)}
+          rowProps={rowProps}
+        />
       ))}
     </div>
   )
@@ -46,6 +56,7 @@ export function ShipmentTimeline({
 
 interface TimelineSectionProps {
   section: TransitSection
+  events: TimelineEvent[]
   rowProps: {
     variant: TimelineVariant
     operators: OperatorNames
@@ -53,14 +64,22 @@ interface TimelineSectionProps {
   }
 }
 
-function TimelineSection({ section, rowProps }: TimelineSectionProps) {
+function TimelineSection({ section, events, rowProps }: TimelineSectionProps) {
   return (
     <section aria-label={sectionTitle(section)} className="border-t border-rule">
       <SectionHeader section={section} />
       <ol className="divide-y divide-rule">
-        {section.milestones.map((milestone) => (
-          <MilestoneRow key={milestone.id} milestone={milestone} {...rowProps} />
-        ))}
+        {interleave(section.milestones, events).map((entry) =>
+          entry.kind === 'milestone' ? (
+            <MilestoneRow key={entry.milestone.id} milestone={entry.milestone} {...rowProps} />
+          ) : (
+            <EventRow
+              key={entry.event.rawEventId}
+              event={entry.event}
+              renderRawEvent={rowProps.renderRawEvent}
+            />
+          ),
+        )}
         {section.kind === 'customs' &&
           section.holds.map((hold) => <HoldRow key={hold.id} hold={hold} {...rowProps} />)}
       </ol>
@@ -106,6 +125,10 @@ function HeaderLine({ icon, children }: { icon: ReactNode; children: ReactNode }
       {children}
     </h3>
   )
+}
+
+function sectionLegId(section: TransitSection): string | null {
+  return section.kind === 'customs' ? null : section.leg.id
 }
 
 function sectionTitle(section: TransitSection): string {

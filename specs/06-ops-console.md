@@ -12,16 +12,20 @@ Ops density (03 §1.2): compact rows, monospaced data, keyboard-first.
 ## 1. Attention queue — `/ops` (US-O-01, AI-2)
 
 ```
-ATTENTION QUEUE              DELAY 3 · HOLD 1 · STALE 2 · CUSTOMS 1 · MISSING DOC 1
+ATTENTION QUEUE   DELAY 3 · HOLD 1 · STALE 0 · CUSTOMS INCIDENT 1 · MISSING DOCUMENT 1
 OPS · ZARAGOZA PLANT, VALENCIA WAREHOUSE    [Site ▾] [Operator ▾] [Mode ▾] [Open+Ack ▾]
 
-▌ 92  HOLD · HIGH      SH-10441  Corvane México  BlueWave ⛴   open 5 h   [Upload document]
+▌ 90  HOLD · HIGH      SH-10441  Corvane México  BlueWave ⛴   open 5 h   [Upload document]
 ▌     Customs hold at Veracruz: documentation discrepancy.
 ▌     key account · international · ETA in 20 h                       J/K move · ↵ open
-▌ 78  DELAY · HIGH     SH-10436  Corvane México  BlueWave ⛴   open 2 h   [Notify customer] N
+▌ 60  CUSTOMS INCIDENT · HIGH  SH-10444  …  waiting on operator   [Contact operator]
+▌     …
+▌ 60  DELAY · HIGH     SH-10436  Corvane México  BlueWave ⛴   open 2 h   [Notify customer] N
 ▌     Vessel ETA moved +30 h. Customer not yet notified.
   …
 ```
+
+The order and scores for Marc Puig are those of [07-seed-data.md](07-seed-data.md) §5.
 
 **OP-01** THE page SHALL list exceptions from `GET /api/exceptions` (status open or
 acknowledged by default), ordered by priority (BR-PR-02), as triage rows (DS-08).
@@ -34,8 +38,9 @@ open, state (`acknowledged`, `waiting on operator`) and the **primary action as 
 **OP-03** A third line SHALL show the top priority factors (BR-PR-03) in field-label style;
 the full AI explanation opens in the exception panel.
 
-**OP-04** Counters per exception type in the page header, clickable as filters. Filters:
-site, operator, mode, type, status. All filters live in the URL.
+**OP-04** Counters per exception type in the page header, clickable as filters. They count the
+queue under every filter except the type filter, so they don't drop to zero while a type is
+selected. Filters: site, operator, mode, type, status. All filters live in the URL.
 
 **OP-05** Empty state: `ALL CLEAR` stamp (UI-10) with a link to the portfolio.
 
@@ -52,12 +57,12 @@ Opens as a side panel (`Sheet`) from a queue row, or from the Exceptions tab of 
 shipment detail; the URL keeps `?exception=<id>` so it can be shared and survives a reload.
 
 ```
-[ON HOLD]  HIGH · OPEN 5 h                                    [Acknowledge] A
+[OPEN]  HIGH · OPEN 5 h                                    [Acknowledge] A
 SH-10441
 ACCOUNT            OPERATOR          ETA               COMMITTED
 Corvane México     BlueWave          ≈ Thu 21 Nov      Wed 20 Nov
 ■━━━━●━━━━━━━━━━━━●━━━━━━◆┅┅┅┅┅○
-┃ AI NOTE · PRIORITY 92 · CONFIDENCE HIGH
+┃ AI NOTE · PRIORITY 90 · CONFIDENCE HIGH
 ┃ Ranked first: high-severity hold [1] on a key account [2], international,
 ┃ ETA in 20 h [3].
 ┃ [1] CHLD from BlueWave, 5 h ago  [2] Account tier: key  [3] ≈ ETA Thu 21 Nov
@@ -68,7 +73,9 @@ HISTORY
 [Resolve…]                                               [Open shipment →]
 ```
 
-**OP-10** THE panel SHALL show: the state stamp, severity, time open, manifest blocks
+**OP-10** THE panel SHALL show: the exception's lifecycle state (BR-EX-09, not the
+shipment status) — `OPEN` and `ACKNOWLEDGED` as condensed text chips, `RESOLVED` as a stamp
+(DS-10), with "Waiting on operator" as a chip next to it — severity, time open, manifest blocks
 (account, operator, ETA with SC-03, committed date), the compact transit line, the AI
 priority explanation as an analyst note (SC-06), suggested actions in order (primary as a
 `--signal` button), and the exception history from activity.
@@ -84,7 +91,8 @@ sent without the agent pressing *Send*.
 (editable). Sending records the action (BR-AC-02); the row shows "Waiting on operator".
 
 **OP-13 Upload document.** A dialog with the document type (pre-selected with the missing
-one) and a file picker (PDF, max 10 MB). Only metadata is stored in Phase 1 (BR-AC-03). On
+one) and a file picker (PDF, max 10 MB). Only metadata is stored in Phase 1 (BR-AC-03).
+It sends the `upload_document` action, so the upload lands in the exception's history. On
 success the panel shows whether the exception was resolved by the upload.
 
 **OP-14 Acknowledge / Resolve.** Acknowledge assigns it to the user (BR-AC-04). Resolve asks
@@ -114,7 +122,11 @@ transit line as the route column (SC-04), open exceptions as a mono count.
 search by reference. Filter options come from `GET /api/reference` (only what's in the
 perimeter). Filters live in the URL.
 
-**OP-22** Sortable by ETA, status and on-time; default sort is attention-first (BR-OT-03).
+**OP-22** Sortable by ETA, status and on-time through clickable column headers; the sort lives
+in the URL (`?sort=eta|status|onTime`) and a second click on the same header reverses it.
+Orders: ETA ascending with unknown last; status in journey order (`booked` → `delivered`);
+on-time `late` → `at_risk` → `unknown` → `on_time`. Default sort (no `sort`) is the API order:
+active shipments attention-first (BR-OT-03), delivered shipments last.
 
 **OP-23** On mobile, each row becomes a two-line ruled row (reference, ETA and on-time on
 the first line; compact transit line and status on the second).
@@ -128,7 +140,7 @@ Same header, manifest blocks, transit line and AI summary note as the customer d
 
 | Tab | Content | Endpoint |
 |-----|---------|----------|
-| Timeline | SC-05 `ops` variant: each milestone with the raw operator event it came from (code, label, original payload on expand, received time); unmapped events in place, marked "Unmapped" with a link to Status mappings | `/timeline`, `/raw-events` |
+| Timeline | SC-05 `ops` variant: each milestone with the raw operator event it came from (code, label, original payload on expand, received time); unmapped events in place, marked "Unmapped" with a link to Status mappings; mapped events that produce no milestone (ETA and position updates) in place as event-only rows labelled with their target ("ETA update", "Position update") | `/timeline`, `/raw-events` |
 | Exceptions | Open and resolved exceptions of the shipment; opening one shows the panel (§2) | `/api/exceptions?shipmentId=` |
 | Documents | SC-08 with upload | `/documents` |
 | Activity | Chronological log: actions, automatic resolutions, messages sent, operator contacts | `/activity` |
@@ -155,7 +167,8 @@ mapping target (milestones, `eta_update`, `position_update`, `ignore`). Both cal
 `POST /api/mappings`, which reprocesses past events (BR-NM-03) and updates affected
 shipments live.
 
-**OP-42** The sidebar badge shows the number of unmapped pairs (03 UI-05).
+**OP-42** The sidebar badge shows the number of unmapped pairs (03 UI-05). The item and its
+badge ship with this page (T15).
 
 ## 6. Simulator (US-R-02) — non-production only
 

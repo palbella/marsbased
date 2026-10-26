@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createClock } from '@/mocks/clock'
 import { createDatabase, createSharedDatabase } from './database'
-import { SNAPSHOT_KEY } from './snapshot'
+import { readSnapshot, SEED_MAX_AGE_HOURS, SNAPSHOT_KEY } from './snapshot'
 import { createMemoryStorage, type SnapshotStorage } from './storage'
 
 const REAL_TIME = Date.parse('2026-11-10T08:00:00.000Z')
@@ -101,5 +101,96 @@ describe('database persistence (02 §5.5)', () => {
 
     tab2.database.reset()
     expect(tab2.clock.now().toISOString()).toBe('2026-11-10T08:00:00.000Z')
+  })
+})
+
+describe('seeds do not age (SD-05)', () => {
+  const HOUR_MS = 3_600_000
+
+  // Tabs whose real time can be moved forward, as if the browser came back hours later.
+  function agingTabs() {
+    let realTime = REAL_TIME
+    const storage = createMemoryStorage()
+    const openTab = () => createSharedDatabase(storage, () => realTime).database
+    const passHours = (hours: number) => {
+      realTime += hours * HOUR_MS
+    }
+    const freshSeed = () => createSharedDatabase(createMemoryStorage(), () => realTime).database
+    return { storage, openTab, passHours, freshSeed }
+  }
+
+  it(`SD-05: a snapshot seeded more than ${SEED_MAX_AGE_HOURS} h ago reseeds on load, keeping sessions`, () => {
+    const { storage, openTab, passHours, freshSeed } = agingTabs()
+    const first = openTab()
+    first.sessions.insert(session)
+    first.persistIfChanged()
+
+    passHours(7)
+    const later = openTab()
+    const fresh = freshSeed()
+
+    expect(later.revision()).toBe(3)
+    expect(later.shipments.all()).toEqual(fresh.shipments.all())
+    expect(later.alerts.all()).toEqual(fresh.alerts.all())
+    expect(later.sessions.all()).toEqual([session])
+    expect(readSnapshot(storage)?.seededAt).toBe(REAL_TIME + 7 * HOUR_MS)
+  })
+
+  it(`SD-05: a snapshot seeded less than ${SEED_MAX_AGE_HOURS} h ago is kept as is`, () => {
+    const { openTab, passHours } = agingTabs()
+    const first = openTab()
+    first.shipments.update('shp_001', { destinationCity: 'Changed' })
+    first.persistIfChanged()
+
+    passHours(5)
+    const later = openTab()
+
+    expect(later.revision()).toBe(2)
+    expect(later.shipments.all()).toEqual(first.shipments.all())
+  })
+
+  it('SD-05: a snapshot without a seed time reseeds, keeping sessions', () => {
+    const { storage, openTab } = agingTabs()
+    const first = openTab()
+    first.sessions.insert(session)
+    first.persistIfChanged()
+    const legacy = { ...readSnapshot(storage), seededAt: undefined }
+    storage.write(SNAPSHOT_KEY, JSON.stringify(legacy))
+
+    const later = openTab()
+
+    expect(later.revision()).toBe(3)
+    expect(later.sessions.all()).toEqual([session])
+  })
+
+  it('SD-05: the age is real time, so advancing the simulation clock does not reseed', () => {
+    const { openTab } = agingTabs()
+    const tab = openTab()
+    tab.simulator.update('sim_001', { clockOffsetHours: 24 })
+    tab.persistIfChanged()
+
+    tab.refresh()
+
+    expect(tab.revision()).toBe(2)
+    expect(tab.simulator.findById('sim_001')?.clockOffsetHours).toBe(24)
+  })
+
+  it('SD-05: two open tabs converge on the reseeded data after refresh()', () => {
+    const { openTab, passHours, freshSeed } = agingTabs()
+    const tab1 = openTab()
+    const tab2 = openTab()
+    tab1.sessions.insert(session)
+    tab1.persistIfChanged()
+    tab2.refresh()
+
+    passHours(7)
+    tab1.refresh()
+    tab2.refresh()
+
+    for (const tab of [tab1, tab2]) {
+      expect(tab.revision()).toBe(3)
+      expect(tab.shipments.all()).toEqual(freshSeed().shipments.all())
+      expect(tab.sessions.all()).toEqual([session])
+    }
   })
 })

@@ -70,5 +70,6 @@ function respond(db: Tables, alert: AlertRow) {
   return toAlertResponse(
     alert,
     db.shipments.findById(alert.shipmentId)?.reference ?? alert.shipmentId,
+    (source) => db.operators.findById(source)?.name ?? null,
   )
 }

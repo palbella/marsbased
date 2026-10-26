@@ -91,26 +91,45 @@ NEEDS ATTENTION ─────────────────────�
 TODAY ───────────────────────────────────────────────────────────────────────────
  ≈ 18:00        SH-10402  Barcelona WH → Sevilla                ■ On time
                 ■━━━━━━━━━━━━━━━━━━●┅┅○   Out for delivery
-THIS WEEK ───────────────────────────────────────────────────────────────────────
+NEXT 7 DAYS ─────────────────────────────────────────────────────────────────────
  …
 ```
 
 **CP-01** THE page SHALL call `GET /api/shipments` (the perimeter applies in the API) and
 show the counts of active, on time, at risk and late shipments as compact counters in the
-page header; each counter filters the list.
+page header; each counter filters the list by on-time indicator (`?onTime=`), and *Active*
+clears that filter. The counts come from the unfiltered active list
+(`GET /api/shipments?view=active`), so they don't change while filtering.
 
 **CP-02** THE list SHALL be an arrivals agenda (DS-09): a pinned *Needs attention* group
 (`late`, `at_risk`, `on_hold`, `unknown`, ordered by BR-OT-03), then the rest grouped by
-ETA day: *Today*, *Tomorrow*, *This week*, *Later*.
+ETA day in the viewer's time zone, as a rolling window: *Today*, *Tomorrow*, *Next 7 days*
+(from the day after tomorrow to the 7th day after today), *Later*. A shipment that doesn't need
+attention and has an ETA in the past goes to *Today*. Within each group the API order
+(BR-OT-03) is kept. The *Delivered* view is a flat list, newest delivery first, with no
+*Needs attention* group.
 
 **CP-03** Each row SHALL lead with the ETA in large condensed type (SC-03), then: reference
 in mono, origin site → destination city and country, on-time indicator (SC-02), unread
-alert marker, the compact transit line (SC-04) and one status sentence ("Out for
-delivery", "About 1 day behind the committed Wed 13 Nov").
+alert marker, the compact transit line (SC-04) and one status sentence from the pure
+`statusSentence()` (`domain/rules`):
+
+| Case | Sentence |
+|------|----------|
+| status `on_hold` | "Held at customs" |
+| `at_risk` because of the AI prediction (the same case as `onTimeReason()`, BR-OT-01) | "AI predicts about {N h \| N day(s)} behind the committed {Wed 4 Nov}" |
+| `late` or `at_risk` with an ETA after the committed date | "About {N h \| N day(s)} behind the committed {Wed 13 Nov}" |
+| `unknown` | "No recent update from the operator" |
+| status `booked` | "Booked, waiting for pickup" |
+| otherwise | the status label ("Out for delivery", "Delivered") |
+
+The delay reads in hours under 12 h ("About 5 h behind…"), otherwise in whole days, rounded
+(at least 1: an 18 h delay is "About 1 day behind…").
 
 **CP-04** Search by reference (contains, case-insensitive), filter by status, and switch
-between *Active* and *Delivered (last 7 days)*. Filters live in the URL
-(`?q=&status=&view=`).
+between *Active* and *Delivered (last 7 days)*. The status filter offers every status
+except `delivered` (covered by the view switch). Filters live in the URL
+(`?q=&status=&onTime=&view=`).
 
 **CP-05** Clicking a row opens its detail page.
 
@@ -149,8 +168,14 @@ predicted AI-5) → full transit line (SC-04) → AI summary note (AI-1, SC-06) 
 documents → related alerts. On mobile everything stacks in that order.
 
 **CP-12** If there is an open hold or customs incident, a ruled notice under the header
-SHALL explain it in plain language and say whether the customer needs to do anything (from
-the latest related alert, BR-AL-03).
+SHALL explain it in plain language and say whether the customer needs to do anything. The
+alert alone can't tell whether it is still open (a release by `customs_cleared` creates no
+alert), so:
+- *Hold notice:* WHILE `shipment.status = on_hold`; text from the latest related `on_hold`
+  alert (BR-AL-03).
+- *Customs-incident notice:* WHILE the latest customs-related alert (`customs_issue` or
+  `on_hold`) is `customs_issue` and the status is still `in_customs`; text from that alert.
+  Other alert types (ETA changes, ops messages) neither show nor hide the notice.
 
 **CP-13** Stale notice per SC-07.
 

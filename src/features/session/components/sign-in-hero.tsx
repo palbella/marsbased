@@ -50,25 +50,7 @@ function HeroTransitLine() {
           strokeWidth={3}
           strokeDasharray="6 6"
         />
-        <circle cx={12} cy={LINE_Y} r={STOP_RADIUS} className="fill-paper" />
-        <circle cx={120} cy={LINE_Y} r={STOP_RADIUS} className="fill-paper" />
-        <rect x={CURRENT_X - 7} y={LINE_Y - 7} width={14} height={14} className="fill-signal" />
-        <rect
-          x={CUSTOMS_X - 6}
-          y={LINE_Y - 6}
-          width={12}
-          height={12}
-          transform={`rotate(45 ${CUSTOMS_X} ${LINE_Y})`}
-          className="fill-ink stroke-paper/60"
-          strokeWidth={2}
-        />
-        <circle
-          cx={348}
-          cy={LINE_Y}
-          r={STOP_RADIUS}
-          className="fill-ink stroke-paper/60"
-          strokeWidth={2}
-        />
+        <HeroStops />
         {STOPS.map((stop) => (
           <text
             key={stop.label}
@@ -82,5 +64,32 @@ function HeroTransitLine() {
         ))}
       </g>
     </svg>
+  )
+}
+
+// Two confirmed stops, the current position, the customs stamp and the destination.
+function HeroStops() {
+  return (
+    <>
+      <circle cx={12} cy={LINE_Y} r={STOP_RADIUS} className="fill-paper" />
+      <circle cx={120} cy={LINE_Y} r={STOP_RADIUS} className="fill-paper" />
+      <rect x={CURRENT_X - 7} y={LINE_Y - 7} width={14} height={14} className="fill-signal" />
+      <rect
+        x={CUSTOMS_X - 6}
+        y={LINE_Y - 6}
+        width={12}
+        height={12}
+        transform={`rotate(45 ${CUSTOMS_X} ${LINE_Y})`}
+        className="fill-ink stroke-paper/60"
+        strokeWidth={2}
+      />
+      <circle
+        cx={348}
+        cy={LINE_Y}
+        r={STOP_RADIUS}
+        className="fill-ink stroke-paper/60"
+        strokeWidth={2}
+      />
+    </>
   )
 }

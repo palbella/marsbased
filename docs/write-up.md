@@ -69,6 +69,11 @@ Source: specs/02-architecture.md §1, §2, §5.7, §7. -->
 
 ### Core assumptions
 
+- **Synthetic scenario.** A fictional manufacturer, Corvane Industrial, ships from two
+  factories (Zaragoza, Bilbao) and two warehouses (Valencia, Barcelona) in Spain to four
+  customers (three in Spain, one in France) and a subsidiary in Mexico, through five
+  operators (road, drayage, sea, last mile). 22 shipments cover every status and exception
+  type.
 - **Shipments are created upstream, not in this tool.** They are created in the
   manufacturer's ERP/TMS when a booking with the operators is confirmed (legs, operators,
   planned dates, committed delivery date, tracking numbers). The tracking app ingests them;

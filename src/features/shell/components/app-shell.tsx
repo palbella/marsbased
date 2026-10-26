@@ -2,11 +2,13 @@
 
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState, type PropsWithChildren } from 'react'
+import { useLiveUpdates } from '@/features/realtime'
 import { useCurrentUser } from '@/features/session'
+import { SimulatorPanel } from '@/features/simulator'
+import { IS_NON_PRODUCTION } from '@/lib/environment'
 import { InkRail } from './ink-rail'
 import { MobileDrawer } from './mobile-drawer'
 import { OfflineBanner } from './offline-banner'
-import { SimulatorSheet } from './simulator-sheet'
 import { StatusStrip } from './status-strip'
 
 // 03 §3, UI-01: one shell for both roles. Strip and rail are fixed; only `main` scrolls,
@@ -17,6 +19,8 @@ export function AppShell({ children }: PropsWithChildren) {
   const mainRef = useRef<HTMLElement>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [simulatorOpen, setSimulatorOpen] = useState(false)
+  // US-R-01: one subscription per tab, while signed in.
+  useLiveUpdates()
 
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0 })
@@ -44,7 +48,8 @@ export function AppShell({ children }: PropsWithChildren) {
         onOpenChange={setDrawerOpen}
         onOpenSimulator={openSimulator}
       />
-      <SimulatorSheet open={simulatorOpen} onOpenChange={setSimulatorOpen} />
+      {/* OP-54: the simulator does not exist outside non-production. */}
+      {IS_NON_PRODUCTION && <SimulatorPanel open={simulatorOpen} onOpenChange={setSimulatorOpen} />}
     </div>
   )
 }

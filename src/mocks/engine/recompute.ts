@@ -1,6 +1,7 @@
 import type { DomainEvent } from '@/domain'
 import type { Tables } from '@/mocks/db/schema'
 import { createAlert, type Evaluation } from './alerts'
+import { ensureProofOfDelivery } from './documents'
 import { detectExceptions } from './exception-rules'
 import { upsertExceptions } from './exception-upsert'
 import { loadShipmentFacts, type ShipmentFacts } from './facts'
@@ -17,6 +18,7 @@ export function recompute(db: Tables, shipmentId: string, now: Date): DomainEven
   const previous = previousEvaluation(db, facts)
   const alert = createAlert(db, facts, view, previous, exceptions.raised, now)
   const evaluationChanged = saveEvaluation(db, view, previous, now)
+  const proofOfDelivery = view.delivered ? ensureProofOfDelivery(db, shipmentId) : null
 
   const changes: DomainEvent[] = [...new Set(exceptions.changedIds)].map((exceptionId) => ({
     type: 'exception.changed',
@@ -24,6 +26,7 @@ export function recompute(db: Tables, shipmentId: string, now: Date): DomainEven
     exceptionId,
   }))
   if (alert) changes.push({ type: 'alert.created', shipmentId, alertId: alert.id })
+  if (proofOfDelivery) changes.push({ type: 'document.changed', shipmentId })
   if (evaluationChanged || changes.length > 0)
     changes.unshift({ type: 'shipment.updated', shipmentId })
   return changes

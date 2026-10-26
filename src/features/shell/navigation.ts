@@ -2,7 +2,7 @@ import type { Role } from '@/domain'
 
 // UI-05: the rail per role, declared as data. The Simulator item (non-production) is not a
 // route: the rail adds it as a button that opens the side panel.
-export type CounterId = 'unreadAlerts' | 'activeExceptions' | 'unmappedStatuses'
+export type CounterId = 'unreadAlerts' | 'activeExceptions'
 
 export interface NavItem {
   label: string
@@ -23,12 +23,7 @@ const opsNavigation: NavItem[] = [
   { label: 'Attention', href: '/ops', counter: { id: 'activeExceptions', label: 'active' } },
   // US-O-02
   { label: 'Shipments', href: '/ops/shipments' },
-  // US-O-05
-  {
-    label: 'Mappings',
-    href: '/ops/mappings',
-    counter: { id: 'unmappedStatuses', label: 'unmapped' },
-  },
+  // US-O-05 Mappings ships with its page in T15 (03 UI-05).
 ]
 
 export const navigation: Record<Role, NavItem[]> = {

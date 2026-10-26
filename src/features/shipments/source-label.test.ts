@@ -27,8 +27,8 @@ describe('SC-03 source tooltip copy', () => {
 
   it('system, with and without evidence', () => {
     expect(sourceLabel(date('estimated', 'system'))).toBe('Our estimate')
-    const eta = { ...date('estimated', 'system'), basis: 'the vessel departed Valencia 18 h late' }
-    expect(sourceLabel(eta)).toBe('Our estimate, based on the vessel departed Valencia 18 h late')
+    const eta = { ...date('estimated', 'system'), basis: 'the vessel departing Valencia 18 h late' }
+    expect(sourceLabel(eta)).toBe('Our estimate, based on the vessel departing Valencia 18 h late')
     expect(sourceLabel({ ...eta, basis: null })).toBe('Our estimate')
   })
 

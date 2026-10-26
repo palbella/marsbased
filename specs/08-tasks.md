@@ -137,8 +137,9 @@ T12 reduced to a 360 px check.
 - Portfolio board with filters from `/api/reference` and two-line mobile rows (OP-20..23);
   ops detail with Timeline (raw vs normalised), Exceptions, Documents, Activity tabs
   (OP-30).
-- **Done when:** filters are reflected in the URL; the raw BlueWave event is visible next to
-  its normalised milestone on SH-10433.
+- **Done when:** filters and sort are reflected in the URL; the raw BlueWave event is visible
+  next to its normalised milestone on SH-10433; delivered shipments are listed last by
+  default (OP-22).
 
 ### T11 — Realtime and simulator
 - `RealtimeClient` with `BroadcastChannel` + local dispatch (02 §7), `useLiveUpdates`
@@ -186,6 +187,9 @@ T12 reduced to a 360 px check.
 - "Mark all as read" (CP-22), board flip on live updates (DS-07, CP-30, OP-06, OP-24),
   queue keyboard shortcuts (OP-07) and the monitoring log in the simulator panel (OP-56).
 - Until then, live changes are shown with the update dot only.
+- OP-07 `Esc`: a confirmation toast is the topmost Radix layer, so today the first `Esc`
+  after an action dismisses the toast and the second closes the exception panel (accepted
+  in T09). Decide here whether `Esc` should close the panel directly.
 
 ## Review script (T13)
 

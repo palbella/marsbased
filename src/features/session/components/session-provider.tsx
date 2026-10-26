@@ -19,30 +19,13 @@ const RESOLVING: Session = { status: 'resolving' }
 // the tab out when any request reports an expired session.
 export function SessionProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient()
-  const [gate, setGate] = useState<TokenGate>({ kind: 'checking' })
+  const [gate, setGate] = useTokenGate()
   const me = useQuery({
     queryKey: queryKeys.auth.me(),
     queryFn: ({ signal }) => authService.me({ signal }),
     enabled: gate.kind === 'present',
     staleTime: Infinity,
   })
-
-  // sessionStorage only exists in the browser, so the token is read after mount.
-  useEffect(() => {
-    setGate(authService.hasSession() ? PRESENT : signedOut('no-session'))
-  }, [])
-
-  useEffect(
-    () =>
-      onSessionExpired(() => {
-        // The auth service sets the monitoring user on sign-in and /me, and clears it on
-        // sign-out; an expiry happens outside it.
-        monitoring.setUser(null)
-        queryClient.clear()
-        setGate(signedOut('expired'))
-      }),
-    [queryClient],
-  )
 
   const session = toSession(gate, me)
 
@@ -65,6 +48,30 @@ export function SessionProvider({ children }: PropsWithChildren) {
   }
 
   return <SessionContext value={{ session, signIn, signOut }}>{children}</SessionContext>
+}
+
+// Whether the tab holds a token, and why not: never had one, signed out or expired (UI-09).
+function useTokenGate() {
+  const queryClient = useQueryClient()
+  const [gate, setGate] = useState<TokenGate>({ kind: 'checking' })
+
+  // sessionStorage only exists in the browser, so the token is read after mount.
+  useEffect(() => {
+    setGate(authService.hasSession() ? PRESENT : signedOut('no-session'))
+  }, [])
+
+  useEffect(
+    () =>
+      onSessionExpired(() => {
+        // The auth service sets the monitoring user on sign-in and /me, and clears it on
+        // sign-out; an expiry happens outside it.
+        monitoring.setUser(null)
+        queryClient.clear()
+        setGate(signedOut('expired'))
+      }),
+    [queryClient],
+  )
+  return [gate, setGate] as const
 }
 
 function signedOut(reason: SignedOutReason): TokenGate {

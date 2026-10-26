@@ -25,14 +25,26 @@ export function onTimeReason(
   if (shipment.onTime === 'late' && now.getTime() > Date.parse(shipment.plannedEta)) {
     return 'The committed date has passed'
   }
-  const etaExplainsRisk = delay !== null && delay > AT_RISK_DELAY_HOURS
-  if (shipment.onTime === 'at_risk' && prediction && !etaExplainsRisk) {
+  if (prediction && isPredictedRisk(shipment)) {
     const predictedDelay = hoursAfterCommitted(prediction.value, shipment)
     return `AI predicts arrival ${hoursText(predictedDelay)} after the committed date`
   }
   if (delay === null) return 'No ETA available'
   if (delay <= 0) return 'ETA on or before the committed date'
   return `ETA ${hoursText(delay)} after the committed date`
+}
+
+// BR-OT-01, BR-AI-05: an `at_risk` the ETA alone doesn't explain comes from the AI
+// prediction. Shared with the status sentence (CP-03), so both name the same cause.
+export function isPredictedRisk(shipment: OnTimeFacts): boolean {
+  if (shipment.onTime !== 'at_risk') return false
+  const delay = etaDelayHours(shipment)
+  return delay === null || delay <= AT_RISK_DELAY_HOURS
+}
+
+// Hours from the committed date to `date`; negative when earlier.
+export function hoursAfterCommitted(date: string, shipment: Pick<Shipment, 'plannedEta'>): number {
+  return (Date.parse(date) - Date.parse(shipment.plannedEta)) / MS_PER_HOUR
 }
 
 function deliveredReason(shipment: OnTimeFacts): string {
@@ -50,10 +62,6 @@ function unknownReason(shipment: OnTimeFacts): string {
 function etaDelayHours(shipment: OnTimeFacts): number | null {
   if (shipment.eta === null) return null
   return hoursAfterCommitted(shipment.eta.value, shipment)
-}
-
-function hoursAfterCommitted(date: string, shipment: OnTimeFacts): number {
-  return (Date.parse(date) - Date.parse(shipment.plannedEta)) / MS_PER_HOUR
 }
 
 function hoursText(hours: number): string {

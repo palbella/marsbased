@@ -9,12 +9,12 @@ const basisOf = (reference: string) => {
 
 describe('SC-03 ETA basis, from the BR-ETA rule that applied', () => {
   it('BR-ETA-03: an earlier leg operator moved its arrival', () => {
-    expect(basisOf('SH-10436')).toBe('BlueWave moved the vessel arrival 2 h ago')
+    expect(basisOf('SH-10436')).toBe('BlueWave moving the vessel arrival 2 h ago')
   })
 
   it('BR-ETA-04: the delay of the latest done milestone', () => {
-    expect(basisOf('SH-10404')).toBe('the truck left Zaragoza Plant 5 h late')
-    expect(basisOf('SH-10433')).toBe('the vessel departed Port of Valencia on schedule')
+    expect(basisOf('SH-10404')).toBe('the truck leaving Zaragoza Plant 5 h late')
+    expect(basisOf('SH-10433')).toBe('the vessel departing Port of Valencia on schedule')
   })
 
   it('null for booking (BR-ETA-04 before events), operator (BR-ETA-02) and confirmed (BR-ETA-01)', () => {

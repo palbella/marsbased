@@ -1,14 +1,15 @@
 'use client'
 
-import { EmptyState } from '@/components/ui/empty-state'
-import { PageHeader } from '@/components/ui/page-header'
+import { Suspense } from 'react'
+import { LoadingState } from '@/components/ui/loading-state'
+import { AttentionQueuePage } from '@/features/exceptions'
 
-// TEMPORARY (T06): placeholder for the attention queue (US-O-01, DS-08), replaced in T09.
+// US-O-01, OP-01..16: the filters and the open panel read the URL, which needs a Suspense
+// boundary (02 §8).
 export default function OpsHomePage() {
   return (
-    <>
-      <PageHeader title="Attention queue" subtitle="Operations console" />
-      <EmptyState stamp="IN PREPARATION" message="The attention queue is on its way." />
-    </>
+    <Suspense fallback={<LoadingState label="Loading the attention queue" />}>
+      <AttentionQueuePage />
+    </Suspense>
   )
 }

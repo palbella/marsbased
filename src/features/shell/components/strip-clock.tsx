@@ -1,9 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-
-// Often enough that the minute never lags visibly.
-const TICK_MS = 15_000
+import { useSimulationClock, useSimulationNow } from '@/features/simulator'
 
 // en-GB gives a 24 h clock and the short zone name, e.g. "14:32 CET" (DS-01).
 const timeFormat = new Intl.DateTimeFormat('en-GB', {
@@ -12,18 +9,15 @@ const timeFormat = new Intl.DateTimeFormat('en-GB', {
   timeZoneName: 'short',
 })
 
-// DS-01: local time. The simulation offset (`SIM +n h`) joins in T11.
+// DS-01, BR-TM-01: the simulation time, the same "now" every relative time reads, with its
+// offset (`14:32 CET · SIM +2 h`) while the simulator has moved the clock.
 export function StripClock({ className }: { className?: string }) {
-  const [now, setNow] = useState(() => new Date())
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), TICK_MS)
-    return () => window.clearInterval(timer)
-  }, [])
-
+  const now = useSimulationNow()
+  const offsetHours = useSimulationClock().data?.offsetHours ?? 0
   return (
-    <time dateTime={now.toISOString()} className={className}>
-      {timeFormat.format(now)}
-    </time>
+    <span className={className}>
+      <time dateTime={now.toISOString()}>{timeFormat.format(now)}</time>
+      {offsetHours > 0 && <span> · SIM +{offsetHours} h</span>}
+    </span>
   )
 }

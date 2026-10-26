@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { User } from '@/domain'
 import { Wordmark } from '@/components/ui/wordmark'
 import { homeFor } from '@/features/session'
+import { NetworkChip } from '@/features/simulator'
 import { IS_NON_PRODUCTION } from '@/lib/environment'
 import { AlertsBell } from './alerts-bell'
 import { LiveIndicator } from './live-indicator'
@@ -17,8 +18,8 @@ interface StatusStripProps {
 }
 
 // DS-01, UI-03, left to right: menu button (mobile), wordmark, live indicator, clock,
-// non-production chip, bell (customer), user menu. Below 768 px the clock is hidden (UI-02).
-// The network-mode chip (OP-55) joins in T11.
+// non-production chip with the network-mode warning (OP-55), bell (customer), user menu.
+// Below 768 px the clock is hidden (UI-02).
 export function StatusStrip({ user, onOpenMenu }: StatusStripProps) {
   return (
     <header className="col-span-full flex h-14 items-center gap-2 border-b border-paper/15 bg-ink px-2 text-paper sm:gap-4 md:px-5">
@@ -37,6 +38,7 @@ export function StatusStrip({ user, onOpenMenu }: StatusStripProps) {
         <LiveIndicator />
         <StripClock className="hidden font-mono text-xs tracking-wider text-paper/80 md:inline" />
         {IS_NON_PRODUCTION && <NonProductionChip />}
+        {IS_NON_PRODUCTION && <NetworkChip />}
         {user.role === 'customer' && <AlertsBell />}
         <UserMenu user={user} />
       </div>

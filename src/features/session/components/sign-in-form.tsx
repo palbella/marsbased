@@ -22,18 +22,7 @@ export function SignInForm({ form, expired }: SignInFormProps) {
       aria-labelledby="sign-in-title"
       className="flex flex-col gap-5"
     >
-      <h1
-        id="sign-in-title"
-        className="font-condensed text-2xl font-semibold tracking-wide uppercase"
-      >
-        Sign in
-      </h1>
-      {expired && (
-        <p role="status" className="flex items-center gap-2 border-l-2 border-ink pl-3 text-sm">
-          <ClockAlertIcon className="size-4" strokeWidth={1.5} aria-hidden />
-          Your session has expired. Sign in again.
-        </p>
-      )}
+      <SignInHeading expired={expired} />
       <SignInInput
         field="email"
         label="Email"
@@ -57,6 +46,25 @@ export function SignInForm({ form, expired }: SignInFormProps) {
       </Button>
       {formError && <ErrorMessage role="alert">{formError}</ErrorMessage>}
     </form>
+  )
+}
+
+function SignInHeading({ expired }: { expired: boolean }) {
+  return (
+    <>
+      <h1
+        id="sign-in-title"
+        className="font-condensed text-2xl font-semibold tracking-wide uppercase"
+      >
+        Sign in
+      </h1>
+      {expired && (
+        <p role="status" className="flex items-center gap-2 border-l-2 border-ink pl-3 text-sm">
+          <ClockAlertIcon className="size-4" strokeWidth={1.5} aria-hidden />
+          Your session has expired. Sign in again.
+        </p>
+      )}
+    </>
   )
 }
 

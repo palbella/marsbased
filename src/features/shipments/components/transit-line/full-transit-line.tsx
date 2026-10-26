@@ -55,15 +55,7 @@ export function FullTransitLine({ shipment, timeline, className }: FullTransitLi
           <SectionHeader key={index} section={section} span={columnSpan(stops, index)} />
         ))}
         <Track stops={stops} />
-        {stops.map((stop, index) => (
-          <div
-            key={index}
-            className="row-start-2 flex items-center justify-center"
-            style={{ gridColumn: index + 1 }}
-          >
-            <TransitStop stop={stop} current={isCurrent(stop, currentId)} />
-          </div>
-        ))}
+        <StopMarkers stops={stops} currentId={currentId} />
         {stops.map((stop, index) => (
           <StopCaption
             key={index}
@@ -76,6 +68,19 @@ export function FullTransitLine({ shipment, timeline, className }: FullTransitLi
       </div>
     </div>
   )
+}
+
+// Row 2: one marker per stop, on the track.
+function StopMarkers({ stops, currentId }: { stops: Stop[]; currentId: string | null }) {
+  return stops.map((stop, index) => (
+    <div
+      key={index}
+      className="row-start-2 flex items-center justify-center"
+      style={{ gridColumn: index + 1 }}
+    >
+      <TransitStop stop={stop} current={isCurrent(stop, currentId)} />
+    </div>
+  ))
 }
 
 function SectionHeader({ section, span }: { section: TransitSection; span: string }) {

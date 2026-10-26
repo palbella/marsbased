@@ -31,7 +31,7 @@ function operatorUpdateBasis(
   if (!leg) return null
   const arrival = leg.mode === 'sea' ? 'vessel arrival' : `arrival at ${leg.to}`
   const ago = formatDuration(hoursBetween(event.occurredAt, now))
-  return `${operatorName(facts, event.operatorId)} moved the ${arrival} ${ago} ago`
+  return `${operatorName(facts, event.operatorId)} moving the ${arrival} ${ago} ago`
 }
 
 // BR-ETA-04: the delay of the latest done milestone, carried to the committed date.
@@ -45,18 +45,18 @@ function milestoneDelayBasis(view: ShipmentView, facts: ShipmentFacts): string |
   return `${happened} ${formatDuration(delayHours)} late`
 }
 
-// Each milestone as it reads in "…, based on the vessel departed Valencia 18 h late".
+// Each milestone as it reads in "…, based on the vessel departing Valencia 18 h late".
 const whatHappened: Record<MilestoneType, (leg: LegRow) => string> = {
-  picked_up: (leg) => `the goods were picked up in ${leg.from}`,
-  departed_site: (leg) => `the truck left ${leg.from}`,
-  arrived_port: (leg) => `the truck reached ${leg.to}`,
-  loaded_on_vessel: (leg) => `the goods were loaded on the ${leg.vessel ?? 'vessel'}`,
-  vessel_departed: (leg) => `the vessel departed ${leg.from}`,
-  vessel_arrived: (leg) => `the vessel arrived at ${leg.to}`,
-  discharged: (leg) => `the goods were unloaded at ${leg.to}`,
-  customs_submitted: () => 'the customs declaration was submitted',
-  customs_cleared: () => 'customs cleared the goods',
-  customs_hold: () => 'customs held the goods',
-  out_for_delivery: (leg) => `the goods went out for delivery in ${leg.to}`,
-  delivered: (leg) => `the goods were delivered in ${leg.to}`,
+  picked_up: (leg) => `the goods being picked up in ${leg.from}`,
+  departed_site: (leg) => `the truck leaving ${leg.from}`,
+  arrived_port: (leg) => `the truck reaching ${leg.to}`,
+  loaded_on_vessel: (leg) => `the goods being loaded on the ${leg.vessel ?? 'vessel'}`,
+  vessel_departed: (leg) => `the vessel departing ${leg.from}`,
+  vessel_arrived: (leg) => `the vessel arriving at ${leg.to}`,
+  discharged: (leg) => `the goods being unloaded at ${leg.to}`,
+  customs_submitted: () => 'the customs declaration being submitted',
+  customs_cleared: () => 'customs clearing the goods',
+  customs_hold: () => 'customs holding the goods',
+  out_for_delivery: (leg) => `the goods going out for delivery in ${leg.to}`,
+  delivered: (leg) => `the goods being delivered in ${leg.to}`,
 }

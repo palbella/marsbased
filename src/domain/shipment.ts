@@ -47,7 +47,7 @@ export const etaSchema = sourcedDateSchema.extend({
   // The operator event an `estimated` ETA derives from (BR-ETA-02/03), for traceability (P1).
   rawEventId: idSchema.nullable(),
   // SC-03: a short, customer-safe sentence on what a system estimate is based on (BR-ETA-03/04),
-  // e.g. "the vessel departed 18 h late"; null when there is nothing to explain.
+  // e.g. "the vessel departing Port of Valencia 18 h late"; null when there is nothing to explain.
   basis: z.string().min(1).nullable(),
 })
 export type Eta = z.infer<typeof etaSchema>

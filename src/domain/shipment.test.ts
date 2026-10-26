@@ -34,7 +34,7 @@ const shipment = {
     observedAt: '2026-11-05T08:00:00Z',
     outdated: false,
     rawEventId: 'raw_120',
-    basis: 'BlueWave moved the vessel arrival 2 h ago',
+    basis: 'BlueWave moving the vessel arrival 2 h ago',
   },
   plannedEta: '2026-11-13T10:00:00Z',
   onTime: 'late',

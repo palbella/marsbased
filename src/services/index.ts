@@ -18,6 +18,12 @@ export { exceptionsService } from './exceptions.service'
 export { mappingsService } from './mappings.service'
 export { createQueryClient } from './query-client'
 export { queryKeys } from './query-keys'
+export {
+  createRealtimeClient,
+  realtimeClient,
+  type RealtimeClient,
+  type RealtimeStatus,
+} from './realtime/realtime-client'
 export { referenceService } from './reference.service'
 export { onSessionExpired } from './session-expiry'
 export { shipmentsService } from './shipments.service'

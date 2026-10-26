@@ -56,6 +56,13 @@ export function compareAttention(a: AttentionItem, b: AttentionItem): number {
   return attentionRank(a) - attentionRank(b) || compareEta(a, b)
 }
 
+// OP-22, 02 §5.2: a list of every shipment keeps delivered ones last, after the active ones in
+// attention order; a delivery has nothing left to attend to.
+export function compareActiveFirst(a: AttentionItem, b: AttentionItem): number {
+  const delivered = Number(a.status === 'delivered') - Number(b.status === 'delivered')
+  return delivered || compareAttention(a, b)
+}
+
 // An unknown ETA sorts last.
 function compareEta(a: AttentionItem, b: AttentionItem): number {
   if (a.eta === null || b.eta === null) return Number(a.eta === null) - Number(b.eta === null)

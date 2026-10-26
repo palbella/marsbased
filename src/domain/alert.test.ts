@@ -14,12 +14,14 @@ const alert = {
       provenance: 'estimated',
       source: 'booking',
       observedAt: '2026-10-20T09:00:00Z',
+      operatorName: null,
     },
     newEta: {
       value: '2026-11-14T16:00:00Z',
       provenance: 'estimated',
       source: 'op_bws',
       observedAt: '2026-11-05T08:00:00Z',
+      operatorName: 'BlueWave',
     },
   },
   requiresAction: false,
@@ -38,6 +40,12 @@ describe('alertSchema', () => {
 
   it('rejects a type outside BR-AL-01', () => {
     expect(alertSchema.safeParse({ ...alert, type: 'stale' }).success).toBe(false)
+  })
+
+  it('rejects an ETA impact side without its operator name field (P1)', () => {
+    const { value, provenance, source, observedAt } = alert.etaImpact.newEta
+    const etaImpact = { ...alert.etaImpact, newEta: { value, provenance, source, observedAt } }
+    expect(alertSchema.safeParse({ ...alert, etaImpact }).success).toBe(false)
   })
 
   it('rejects an ETA impact without provenance (P1)', () => {

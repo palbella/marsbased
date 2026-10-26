@@ -62,7 +62,7 @@ describe('02 §5.1 rule 1: the API is the contract', () => {
       // SC-03: confirmed dates need no basis; our estimates say what they are based on.
       expect((await shipmentsService.getById(delivered)).eta?.basis).toBeNull()
       expect((await shipmentsService.getById(shipmentIdOf('SH-10436'))).eta?.basis).toBe(
-        'BlueWave moved the vessel arrival 2 h ago',
+        'BlueWave moving the vessel arrival 2 h ago',
       )
       expect((await shipmentsService.getTimeline(atSea)).milestones).not.toHaveLength(0)
       expect((await aiService.getSummary(atSea)).kind).toBe('summary')
@@ -70,7 +70,15 @@ describe('02 §5.1 rule 1: the API is the contract', () => {
       // 02 §5.2: 204 when there is nothing to predict.
       expect(await aiService.getEtaPrediction(delivered)).toBeNull()
 
-      const [alert] = await alertsService.list()
+      const alerts = await alertsService.list()
+      // BR-AL-03, P1: each ETA impact side names its operator; other sources carry null.
+      expect(alerts.find((item) => item.shipmentReference === 'SH-10452')?.etaImpact).toMatchObject(
+        {
+          previousEta: { source: 'system', operatorName: null },
+          newEta: { source: 'op_lmx', operatorName: 'LastMile Express MX' },
+        },
+      )
+      const [alert] = alerts
       expect(alert).toBeDefined()
       if (alert) expect((await alertsService.markRead(alert.id)).readAt).not.toBeNull()
       await alertsService.markAllRead()

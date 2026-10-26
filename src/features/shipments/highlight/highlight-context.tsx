@@ -21,7 +21,7 @@ export function HighlightProvider({ children }: PropsWithChildren) {
   return <HighlightContext.Provider value={value}>{children}</HighlightContext.Provider>
 }
 
-export function useHighlight(): HighlightValue {
+function useHighlight(): HighlightValue {
   return useContext(HighlightContext)
 }
 

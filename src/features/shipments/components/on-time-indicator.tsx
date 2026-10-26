@@ -8,6 +8,7 @@ import {
   type Shipment,
 } from '@/domain'
 import { Tooltip } from '@/components/ui/tooltip'
+import { useSimulationNow } from '@/features/simulator'
 import { cn } from '@/lib/utils'
 
 const markerClasses: Record<OnTimeIndicatorValue, string> = {
@@ -20,7 +21,7 @@ const markerClasses: Record<OnTimeIndicatorValue, string> = {
 interface OnTimeIndicatorProps {
   shipment: Pick<Shipment, 'onTime' | 'status' | 'eta' | 'plannedEta'>
   prediction?: PredictionFact | null
-  // T11 replaces the browser clock with the simulation clock.
+  // BR-TM-01: the simulation clock unless given.
   now?: Date
   className?: string
 }
@@ -29,10 +30,11 @@ interface OnTimeIndicatorProps {
 export function OnTimeIndicator({
   shipment,
   prediction = null,
-  now = new Date(),
+  now,
   className,
 }: OnTimeIndicatorProps) {
-  const reason = onTimeReason(shipment, prediction, now)
+  const simulationNow = useSimulationNow()
+  const reason = onTimeReason(shipment, prediction, now ?? simulationNow)
   return (
     <Tooltip content={reason}>
       <span

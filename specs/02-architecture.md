@@ -232,7 +232,7 @@ each feature exposes its public API through `index.ts`. A resource uses the same
 | Resource | Endpoint | Spec |
 |----------|----------|------|
 | auth | `POST /api/auth/sign-in` `{ email, password }` → `{ token, user }`, `POST /api/auth/sign-out` → `204`, `GET /api/auth/me` | US-00 |
-| shipments | `GET /api/shipments?view&status&onTime&site&operator&mode&scope&q` (`view`: `active` \| `delivered`; omitted = all, sorted by BR-OT-03), `GET /api/shipments/:id`, `GET /api/shipments/:id/timeline`, `GET /api/shipments/:id/raw-events`, `GET /api/shipments/:id/activity` | US-C-01/02, US-O-02/04 |
+| shipments | `GET /api/shipments?view&status&onTime&site&operator&mode&scope&q` (`view`: `active` \| `delivered`; omitted = all: active shipments sorted by BR-OT-03, then delivered shipments), `GET /api/shipments/:id`, `GET /api/shipments/:id/timeline`, `GET /api/shipments/:id/raw-events`, `GET /api/shipments/:id/activity` | US-C-01/02, US-O-02/04 |
 | exceptions | `GET /api/exceptions?status&type&site&operator&mode&shipmentId` (`status`: `active` = open + acknowledged, the default \| `resolved` \| `all`; sorted by BR-PR-02), `GET /api/exceptions/:id`, `POST /api/exceptions/:id/actions` | US-O-01/03 |
 | alerts | `GET /api/alerts?shipmentId`, `POST /api/alerts/:id/read` → the updated alert, `POST /api/alerts/read-all` → `204` | US-C-04 |
 | reference | `GET /api/reference` → sites, operators, accounts within the perimeter (filter options) | US-O-01/02 |
@@ -452,7 +452,9 @@ One service worker serves every tab, but MSW runs the handlers in each tab's pag
 so each tab holds its own in-memory copy of the db. To behave like one shared database:
 
 - The snapshot lives in `localStorage` under a versioned key (`shipment-db:v1`) with a
-  `revision` counter; a missing or older schema version reseeds.
+  `revision` counter and a `seededAt` timestamp (real time); a missing or older schema
+  version reseeds, and so does a snapshot seeded more than 6 hours ago (SD-05), keeping
+  `sessions`. A reseed writes a new revision, so other open tabs pick it up on `refresh()`.
 - Before handling a request, `database.refresh()` reloads the snapshot if its revision is
   newer than the tab's copy. After a mutation, `persistIfChanged()` writes it back with
   `revision + 1`.
@@ -511,6 +513,20 @@ requests and schema parse failures to these classes.
 
 Section-level error boundaries (`react-error-boundary`) wrap independent blocks of a
 page (AI card, timeline, documents), so one broken block never takes the page down.
+
+Loading always resolves, to data or to the error (NFR-08):
+
+- After **5 s** of loading, the block shows "This is taking longer than usual…" under the
+  skeleton (`LoadingState`).
+- Once retries are exhausted, the error state (`NO SIGNAL` + *Retry*) shows and stays. A
+  refetch of an errored block (Retry, a realtime event, the tab regaining focus) never puts
+  it back to the skeleton: the error stays visible with a "Retrying…" hint until data
+  arrives (`useQueryFailure`). A block that mounts on a failed query shows the error
+  without fetching again (`retryOnMount: false`).
+- TanStack Query pauses retries while the tab is hidden, so a query that fails while the
+  tab is hidden does not retry: the error shows at once, and the focus refetch retries it
+  in the background when the tab is visible again. A retry already waiting when the tab is
+  hidden resumes when it becomes visible. Never an indefinite skeleton.
 
 #### Simulating failures
 
@@ -650,14 +666,23 @@ interface Shipment {
   status: ShipmentStatus
   eta: Sourced<string> | null   // null = unknown, never invented
   // eta also carries `outdated`, `rawEventId` and `basis`: a short, customer-safe sentence
-  // built by the mock from the BR-ETA rule that applied, e.g. "BlueWave moved the vessel
-  // arrival 2 h ago" or "the vessel departed 18 h late"; null when nothing to explain
+  // built by the mock from the BR-ETA rule that applied, e.g. "BlueWave moving the vessel
+  // arrival 2 h ago" or "the vessel departing Port of Valencia 18 h late"; null when nothing
+  // to explain
   plannedEta: string
   lastEventAt: string
   // Route summary for the compact transit line in list rows (SC-04), so lists need no
   // timeline per row.
   hasCustoms: boolean                                   // BR-MS-02
   lastDoneMilestone: { type: MilestoneType; legId: string | null } | null  // BR-ST-01; legId null = customs block
+}
+
+// BR-AL-03: old → new ETA. Each side also carries `operatorName` (the operator's name when
+// `source` is an operator id, otherwise null), so the customer sees "Estimated by BlueWave"
+// without an operators endpoint (P1).
+interface EtaImpact {
+  previousEta: (Sourced<string> & { operatorName: string | null }) | null
+  newEta: (Sourced<string> & { operatorName: string | null }) | null
 }
 
 type ExceptionType = 'delay' | 'hold' | 'stale' | 'customs_incident' | 'missing_document'
@@ -712,6 +737,8 @@ two transports behind one interface:
 // services/realtime/realtime-client.ts
 export interface RealtimeClient {
   subscribe(handler: (event: DomainEvent) => void): () => void
+  // Connection state for the live indicator (DS-01, UI-03); called once on subscribe.
+  onStatusChange(handler: (status: 'connected' | 'disconnected') => void): () => void
 }
 // Phase 1: BroadcastChannel('shipment-events') · Phase 2: EventSource('/api/events')
 ```

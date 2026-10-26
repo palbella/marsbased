@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { EtaView } from './eta'
-import { compareAttention, deriveOnTime, type AttentionItem } from './on-time'
+import { compareActiveFirst, compareAttention, deriveOnTime, type AttentionItem } from './on-time'
 import { NOW, at } from './test-fixtures'
 
 const PLANNED = at(10)
@@ -86,6 +86,26 @@ describe('BR-OT-03 Attention-first sort', () => {
       'unknown',
       'on time, sooner',
       'on time, later',
+    ])
+  })
+
+  it('OP-22 keeps delivered shipments after the active ones', () => {
+    const item = (name: string, onTimeValue: AttentionItem['onTime'], status: AttentionItem['status']) => ({
+      name,
+      onTime: onTimeValue,
+      status,
+      eta: eta(10),
+    }) // prettier-ignore
+    const items = [
+      item('delivered late', 'late', 'delivered'),
+      item('active on time', 'on_time', 'in_transit'),
+      item('active late', 'late', 'in_transit'),
+    ]
+
+    expect(items.sort(compareActiveFirst).map((entry) => entry.name)).toEqual([
+      'active late',
+      'active on time',
+      'delivered late',
     ])
   })
 })

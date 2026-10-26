@@ -1,14 +1,14 @@
 'use client'
 
-import { EmptyState } from '@/components/ui/empty-state'
-import { PageHeader } from '@/components/ui/page-header'
+import { Suspense } from 'react'
+import { LoadingState } from '@/components/ui/loading-state'
+import { ArrivalsPage } from '@/features/arrivals'
 
-// TEMPORARY (T06): placeholder for the arrivals agenda (US-C-01, DS-09), replaced in T08.
+// US-C-01: the filters read the URL, which needs a Suspense boundary (02 §8).
 export default function PortalHomePage() {
   return (
-    <>
-      <PageHeader title="Arrivals" subtitle="Customer portal" />
-      <EmptyState stamp="IN PREPARATION" message="Your arrivals agenda is on its way." />
-    </>
+    <Suspense fallback={<LoadingState label="Loading arrivals" />}>
+      <ArrivalsPage />
+    </Suspense>
   )
 }

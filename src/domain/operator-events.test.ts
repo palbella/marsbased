@@ -9,6 +9,7 @@ const base = {
   occurredAt: '2026-11-10T08:15:00Z',
   receivedAt: '2026-11-10T08:16:00Z',
   mappingStatus: 'mapped',
+  target: 'departed_site',
 }
 
 // 07 §3 payload examples.
@@ -53,7 +54,7 @@ describe('rawEventSchema', () => {
 
   it('accepts an unmapped code (BR-NM-03)', () => {
     const rawEvent = { ...rawEvents[1], payload: 'RET-PLAT;2026-11-10;08:15;ZARAGOZA' }
-    const unmapped = { ...rawEvent, code: 'RET-PLAT', mappingStatus: 'unmapped' }
+    const unmapped = { ...rawEvent, code: 'RET-PLAT', mappingStatus: 'unmapped', target: null }
     expect(rawEventSchema.safeParse(unmapped).success).toBe(true)
   })
 

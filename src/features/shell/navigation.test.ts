@@ -5,11 +5,7 @@ import { activeHref, hasCounter, navigation } from './navigation'
 describe('UI-05 menu per role', () => {
   it('customers get Arrivals and Alerts; both ops roles get the console', () => {
     expect(navigation.customer.map((item) => item.label)).toEqual(['Arrivals', 'Alerts'])
-    expect(navigation.ops_agent.map((item) => item.label)).toEqual([
-      'Attention',
-      'Shipments',
-      'Mappings',
-    ])
+    expect(navigation.ops_agent.map((item) => item.label)).toEqual(['Attention', 'Shipments'])
     expect(navigation.ops_manager).toEqual(navigation.ops_agent)
   })
 
@@ -17,7 +13,6 @@ describe('UI-05 menu per role', () => {
     expect(hasCounter(navigation.customer, 'unreadAlerts')).toBe(true)
     expect(hasCounter(navigation.customer, 'activeExceptions')).toBe(false)
     expect(hasCounter(navigation.ops_agent, 'activeExceptions')).toBe(true)
-    expect(hasCounter(navigation.ops_agent, 'unmappedStatuses')).toBe(true)
   })
 
   it('marks the most specific route as current', () => {

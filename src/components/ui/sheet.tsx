@@ -4,6 +4,7 @@ import { XIcon } from 'lucide-react'
 import { Dialog as SheetPrimitive } from 'radix-ui'
 import type { ComponentProps } from 'react'
 import { cn } from '@/lib/utils'
+import { useReturnFocus } from './use-return-focus'
 
 // shadcn/ui sheet restyled with the tokens (03 §1.4): hairline edge, no shadow and no slide
 // animation (motion is limited to DS-04 and DS-07). Radix traps focus and closes on Esc.
@@ -26,13 +27,17 @@ export function SheetContent({
   closeLabel = 'Close',
   className,
   children,
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: SheetContentProps) {
+  const returnFocus = useReturnFocus({ onOpenAutoFocus, onCloseAutoFocus })
   return (
     <SheetPrimitive.Portal>
       <SheetPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/40" />
       <SheetPrimitive.Content
         aria-describedby={undefined}
+        {...returnFocus}
         className={cn(
           'fixed z-50 flex h-full w-80 max-w-[85vw] flex-col border-rule',
           sideClasses[side],

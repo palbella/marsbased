@@ -1,12 +1,21 @@
 // @vitest-environment jsdom
 import '@/test/dom'
-import { render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render as renderBare, screen } from '@testing-library/react'
+import type { ReactElement } from 'react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import type { OnTimeIndicator as OnTimeValue } from '@/domain'
 import { FIXTURE_NOW, ROUTES } from '@/test/shipment-fixtures'
 import { OnTimeIndicator } from './on-time-indicator'
 import { ShipmentStatus } from './shipment-status'
+
+// The indicator reads the simulation clock through a query (BR-TM-01); `now` is passed, so no
+// request is needed.
+function render(ui: ReactElement) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, enabled: false } } })
+  return renderBare(<QueryClientProvider client={client}>{ui}</QueryClientProvider>)
+}
 
 const WORDS: [OnTimeValue, string][] = [
   ['on_time', 'On time'],

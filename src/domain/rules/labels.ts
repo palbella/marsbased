@@ -1,8 +1,11 @@
 import type { AiInsightKind } from '../ai'
 import type { DocumentStatus, DocumentType } from '../document'
+import type { ExceptionStatus, ExceptionType, Severity } from '../exception'
+import type { ExceptionActionType } from '../exception-action'
 import type { Perimeter, Role } from '../org'
 import type { Mode } from '../primitives'
 import type { OnTimeIndicator, ShipmentStatus } from '../shipment'
+import type { FailureMode } from '../simulator'
 import type { MilestoneState, MilestoneType } from '../timeline'
 
 // Glossary names (01 §4), the same in the user menu, profile and test accounts.
@@ -87,6 +90,35 @@ export const documentStatusLabels: Record<DocumentStatus, string> = {
   pending: 'Pending',
 }
 
+// Glossary names (01 §4) of the exception types, severities and actions (OP-02, OP-10).
+export const exceptionTypeLabels: Record<ExceptionType, string> = {
+  delay: 'Delay',
+  hold: 'Hold',
+  stale: 'Stale',
+  customs_incident: 'Customs incident',
+  missing_document: 'Missing document',
+}
+
+export const severityLabels: Record<Severity, string> = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+}
+
+export const exceptionStatusLabels: Record<ExceptionStatus, string> = {
+  open: 'Open',
+  acknowledged: 'Acknowledged',
+  resolved: 'Resolved',
+}
+
+export const exceptionActionLabels: Record<ExceptionActionType, string> = {
+  notify_customer: 'Notify customer',
+  contact_operator: 'Contact operator',
+  upload_document: 'Upload document',
+  acknowledge: 'Acknowledge',
+  resolve: 'Resolve',
+}
+
 // SC-06: the kind in the analyst-note header.
 export const insightKindLabels: Record<AiInsightKind, string> = {
   summary: 'Summary',
@@ -94,4 +126,13 @@ export const insightKindLabels: Record<AiInsightKind, string> = {
   priority: 'Priority',
   draft: 'Draft message',
   mapping: 'Mapping suggestion',
+}
+
+// OP-55, 02 §5.6: the network conditions the simulator can apply to a tab.
+export const failureModeLabels: Record<FailureMode, string> = {
+  normal: 'Normal',
+  slow: 'Slow network',
+  timeouts: 'Timeouts',
+  flaky: 'Flaky',
+  down: 'API down',
 }

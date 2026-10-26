@@ -209,7 +209,10 @@ first rule that applies wins:
 - **BR-NA-02** `acknowledge` and `resolve` are always available besides the suggestions.
 - **BR-NA-03** Required documents: road shipments need the CMR. Sea shipments need the bill of
   lading, commercial invoice and packing list, plus the customs declaration once customs
-  is submitted. All shipments get a proof of delivery once delivered.
+  is submitted. All shipments get a proof of delivery once delivered: when the engine first
+  sees a shipment delivered it creates its proof of delivery as `pending` if none exists; it
+  becomes `available` when uploaded or when the operator transmits it with the delivery
+  (SIM-05).
 
 ## 10. Actions
 
@@ -335,6 +338,9 @@ shipment (P1) and set `model: 'mock-v1'`.
 
 - **BR-RT-01** Every mutation publishes thin events (architecture §7):
   `shipment.updated`, `exception.changed`, `alert.created`, `document.changed`,
-  `mapping.changed`, `data.reset`. Each carries only IDs.
+  `mapping.changed`, `simulator.changed`, `data.reset`. Each carries only IDs.
+  `simulator.changed` (non-production) is published on clock advance, scenario run, network
+  mode change and reset, so every tab refreshes the clock offset, the scenarios' *Done*
+  state and the network chip.
 - **BR-RT-02** Clients invalidate the queries for the IDs received (`data.reset`
   invalidates everything) and raise toasts from the refetched data, never from the event.

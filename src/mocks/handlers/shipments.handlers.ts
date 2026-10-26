@@ -8,7 +8,7 @@ import {
   shipmentsInPerimeter,
 } from '@/mocks/auth'
 import { clock, database } from '@/mocks/db/instance'
-import { compareAttention } from '@/mocks/engine/on-time'
+import { compareActiveFirst } from '@/mocks/engine/on-time'
 import { param, parseQuery, withMockLatency } from '@/mocks/http'
 import { toActivityResponse } from '@/mocks/mappers/activity.mapper'
 import { toRawEventResponse } from '@/mocks/mappers/raw-event.mapper'
@@ -31,8 +31,8 @@ export const shipmentsHandlers = [
       const shipments = shipmentsInPerimeter(database, user)
         .map((row) => load(row.id))
         .filter((shipment) => matchesShipmentFilters(shipment, filters, now))
-        // BR-OT-03: attention first.
-        .sort((a, b) => compareAttention(a.view, b.view))
+        // BR-OT-03 attention first; delivered last when both views are listed (OP-22).
+        .sort((a, b) => compareActiveFirst(a.view, b.view))
       return HttpResponse.json(shipments.map((shipment) => respond(user, shipment)))
     }),
   ),
@@ -65,11 +65,12 @@ export const shipmentsHandlers = [
       const legIds = new Set(
         database.legs.where((leg) => leg.shipmentId === row.id).map((leg) => leg.id),
       )
+      const mappings = database.statusMappings.all()
       const events = database.rawEvents
         .where((event) => legIds.has(event.legId))
         .flatMap((event) => {
           const operator = database.operators.findById(event.operatorId)
-          return (operator && toRawEventResponse(event, operator)) ?? []
+          return (operator && toRawEventResponse(event, operator, mappings)) ?? []
         })
         .sort((a, b) => a.receivedAt.localeCompare(b.receivedAt))
       return HttpResponse.json(events)

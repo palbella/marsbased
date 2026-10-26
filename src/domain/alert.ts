@@ -14,10 +14,17 @@ export const alertTypeSchema = z.enum([
 ])
 export type AlertType = z.infer<typeof alertTypeSchema>
 
+// BR-AL-03, P1: each side names its operator (null when `source` is not an operator id), so
+// the customer reads "Estimated by BlueWave" without an operators endpoint.
+export const etaImpactDateSchema = sourcedDateSchema.extend({
+  operatorName: z.string().min(1).nullable(),
+})
+export type EtaImpactDate = z.infer<typeof etaImpactDateSchema>
+
 // BR-AL-03: old → new ETA, each with its provenance. null = unknown.
 export const etaImpactSchema = z.object({
-  previousEta: sourcedDateSchema.nullable(),
-  newEta: sourcedDateSchema.nullable(),
+  previousEta: etaImpactDateSchema.nullable(),
+  newEta: etaImpactDateSchema.nullable(),
 })
 export type EtaImpact = z.infer<typeof etaImpactSchema>
 
