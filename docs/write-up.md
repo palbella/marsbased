@@ -1,7 +1,5 @@
 # Shipment Tracking — Write-up
 
-> Draft outline. Max 4 pages. Sections follow the requested structure.
-
 ## 1. AI in the product
 
 **Approach.** AI is embedded in the two workflows the client struggles with, not offered as
@@ -60,10 +58,18 @@ sentence is traceable and the demo is reproducible.
 
 ## 2. System approach, technology choices and planned integrations
 
-<!-- Stack and why; API-first frontend with MSW as the mock seam; normalisation of
-operator events; realtime; integrations planned for the final product (ERP/TMS,
-operator APIs/EDI/email parsing, OIDC, notification channels).
-Source: specs/02-architecture.md §1, §2, §5.7, §7. -->
+- **Stack.** Next.js, TypeScript, Tailwind + shadcn/ui, TanStack Query and Zod, deployed
+  on Vercel. Common, well-supported choices that a team can pick up quickly.
+- **API-first frontend.** The UI only talks to a REST API, mocked in the browser with MSW.
+  The mock holds what the backend will own: operator event normalisation, the exception
+  engine, priorities, alerts and AI. Moving to a real backend means changing environment
+  variables, not features.
+- **Normalisation.** Each operator sends its own format; events are mapped to one
+  canonical set of milestones, and every date keeps its source.
+- **Realtime.** Thin events invalidate what they affect; tabs sync over BroadcastChannel
+  today, server-sent events in production.
+- **Planned integrations.** ERP/TMS for shipments, operator APIs/EDI/email parsing for
+  events, OIDC for sign-in, email/SMS for alerts, Sentry for monitoring.
 
 ## 3. Assumptions, limitations and next steps
 
@@ -85,17 +91,23 @@ Source: specs/02-architecture.md §1, §2, §5.7, §7. -->
   "the internal team sees what corresponds to their site, account and role" without extra
   screens: agents and managers share the same console, only their perimeter differs.
 - **English only.** UI, alerts, AI outputs and operator messages; i18n is out of scope.
-- <!-- operator formats, one origin and one destination per shipment, staleness
-  intervals per mode. Source: specs/01-product-spec.md §11. -->
+- **Simplified shipments.** One origin site and one destination account per shipment;
+  "no news" is judged by an expected update interval per mode (road 12 h, sea 48 h).
 
 ### Known limitations
 
-<!-- Mock backend in the browser, deterministic AI, no real auth, data per browser. -->
+- The backend runs in the browser: data lives per browser and resets with *Reset data*.
+- The AI is deterministic mock logic, not a model.
+- Sign-in is a mock token; no real authentication.
+- Alerts are shown in the app only; no email or SMS.
 
 ### Prioritised next steps
 
-<!-- From specs/02-architecture.md §5.7 and the "Out (later phases)" column of
-specs/01-product-spec.md §10. -->
+1. Real backend implementing the same API, with OIDC sign-in.
+2. Operator integrations (APIs, EDI, email parsing) and ERP/TMS import.
+3. Production AI: ETA model and LLM summaries and drafts, grounded on shipment data.
+4. Email/SMS alerts and Sentry monitoring.
+5. Natural-language questions, map view and analytics.
 
 ## Resilience and monitoring
 
